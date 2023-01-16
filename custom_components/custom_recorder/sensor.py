@@ -15,7 +15,7 @@ from xmlrpc.client import boolean
 import homeassistant
 from typing import Optional
 from homeassistant.const import (
-    STATE_UNKNOWN, STATE_UNAVAILABLE,
+    STATE_UNKNOWN, STATE_UNAVAILABLE, ATTR_UNIT_OF_MEASUREMENT, ATTR_ICON
 )
 
 import os
@@ -61,7 +61,9 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
 
     # 디렉토리에 있는 목록으로 config 대체
     file_list = os.listdir(DATA_DIR)
+    d = [None, None]
     for file in file_list:
+        _LOGGER.debug(f"filename - {file}")
         f = open(DATA_DIR + file)
         lines = f.readlines()
         name = None
@@ -100,7 +102,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
         if name != None and source_entity != None and record_period != None:
             #d = {'origin_entity': origin_entity,
             #        'name': name, 'record_period': record_period}
-            _LOGGER.debug(f"add entity - {d}")
+            #_LOGGER.debug(f"add entity - {d}")
             new_devices.append(
                 CustomRecorder(
                     hass,
@@ -247,14 +249,14 @@ class CustomRecorder(Sensorbase):
 
         self.hass = hass
         self.entry_id = entry_id
-        self._switch_entity = source_entity
+        self._source_entity = source_entity
         _LOGGER.debug(f"data file - {DATA_DIR + file}")
         
         self.entity_id = async_generate_entity_id(
             ENTITY_ID_FORMAT, "{}_{}".format(NAME, entity_name), hass=hass)
         self._name = "{}".format(entity_name)
         # self._name = "{} {}".format(device.device_id, SENSOR_TYPES[sensor_type][1])
-        self._unit_of_measurement = "aa"
+        self._unit_of_measurement = None
         self._state = last_data
         self._attributes = {}
         self._attributes["source entity id"] = source_entity
@@ -265,55 +267,49 @@ class CustomRecorder(Sensorbase):
         self._record_period = record_period
         self._loop = asyncio.get_event_loop()
 
-        # self._device_class = SENSOR_TYPES[sensor_type][0]
         self._unique_id = self.entity_id
         self._device = device
+        self._setup = False
 
-        self._loop.create_task(self.setup())
+        self.setup()
+        #self._loop.create_task(self.setup())
 
-    async def setup(self):
-        entity_registry = await homeassistant.helpers.entity_registry.async_get_registry(
-            self.hass)
-        e = entity_registry.async_get(self._switch_entity)
-        #self._device_class = e.device_class
-        #self._entity_category = e.entity_category
-        #self._icon = e.icon
-        #self._unit_of_measurement = e.unit_of_measurement
-        #_LOGGER.debug(f"call switch_entity_listener2 e - {e}")
+    def setup(self):
+        _LOGGER.debug(f"call setup")
+        state = self.hass.states.get(self._source_entity)
+
+        #self._state = state.state
 
         self.hass.data[DOMAIN][self.entry_id]["listener"].append(async_track_state_change(
-            self.hass, self._switch_entity, self.switch_entity_listener))
-        #state = self.hass.states.get(self._switch_entity)
-
-        #if _is_valid_state(state):
-        #    _LOGGER.debug("is valid state")
-        #    self._attributes["switch state"] = state.state
-        #    self._state = state.state
-        #    if state.state == "on":
-        #        self._force_off = True
-        #        self.hass.services.call('homeassistant', 'turn_off', {
-        #                                "entity_id": self._switch_entity}, False)
+            self.hass, self._source_entity, self.entity_listener))
 
         #self._state = self.hass.states.get(self._switch_entity).state
 
-    async def switch_entity_listener(self, entity, old_state, new_state):
+    async def entity_listener(self, entity, old_state, new_state):
         try:
-            if old_state == None or new_state == None or old_state.state == None or new_state.state == None:
-                return
-            if old_state.state != new_state.state:
+            if _is_valid_state(new_state):
+                if self._setup == False:
+                    self._unit_of_measurement = new_state.attributes.get(
+                        ATTR_UNIT_OF_MEASUREMENT)
+                    self._icon = new_state.attributes.get(
+                        ATTR_ICON)
+                    self._setup = True
+
                 self._state = new_state.state
                 self.schedule_update_ha_state(True)
                 # 데이터를 파일에 저장
-                now = datetime.now()
-                str_now = now.strftime('%Y-%m-%d %H:%M:%S.%f')
-                self._attributes["data"][str_now] = self._state
-                data = "[data]\n" + str_now + ',' + self._state + "\n"
-                _LOGGER.debug(f"data - {data}")
-                fp = open(DATA_DIR + self._attributes["data file"], "a")
-                fp.write(data)
-                fp.close()
-                _LOGGER.debug("call switch_entity_listener, old state : %s, new_state : %s",
-                          old_state, new_state.state)  
+                # 데이터가 하나도 기록된 게 없다면 첫 데이터이므로 저장하고 아닐때는 값이 바뀔때만 저장
+                if (_is_valid_state(old_state) and old_state.state != new_state.state) or len(self._attributes["data"]) <= 0:
+                    now = datetime.now()
+                    str_now = now.strftime('%Y-%m-%d %H:%M:%S.%f')
+                    self._attributes["data"][str_now] = self._state
+                    data = "[data]\n" + str_now + ',' + self._state + "\n"
+                    #_LOGGER.debug(f"data - {data}")
+                    fp = open(DATA_DIR + self._attributes["data file"], "a")
+                    fp.write(data)
+                    fp.close()
+                #_LOGGER.debug("call switch_entity_listener, old state : %s, new_state : %s",
+                #          old_state, new_state.state)  
 
         except Exception as e:
             _LOGGER.error(f"catch error - {e}")
