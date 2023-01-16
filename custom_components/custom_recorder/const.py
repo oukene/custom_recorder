@@ -19,7 +19,7 @@ CONF_RECORD_PERIOD = "record_period"
 CONF_RECORD_TYPE = "record_type"
 
 DIR_PATH = "custom_recorder/"
-DATA_PATH = "test/"
+DATA_PATH = "data/"
 
 DATA_DIR = DIR_PATH + DATA_PATH
 
