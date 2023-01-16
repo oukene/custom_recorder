@@ -1,0 +1,34 @@
+{
+    "title": "Custom Recorder",
+    "config": {
+        "step": {
+            "confirm": {
+                "description": "Do you want to set up?"
+            },
+            "user": {
+                "data": {},
+                "description": "Click OK to add intergration"
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Custom Recorder Options",
+                "data": {
+                    "add_another": "Select to add a Recorder Entity"
+                },
+                "description": "If unchecked it will be deleted"
+            },
+            "entity": {
+                "title": "add entity",
+                "data": {
+                    "switch_entity": "input source entity",
+                    "name": "recorder sensor name",
+                    "record_period": "record period(days)",
+                    "add_another": "add more switch"
+                }
+            }
+        }
+    }
+}

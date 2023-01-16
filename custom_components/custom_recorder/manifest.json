@@ -1,0 +1,16 @@
+{
+  "domain": "custom_recorder",
+  "name": "Custom Recorder",
+  "config_flow": true,
+  "documentation": "https://github.com/oukene/custom_recorder",
+  "requirements": [],
+  "ssdp": [],
+  "zeroconf": [],
+  "homekit": {},
+  "dependencies": [],
+  "codeowners": [
+    "@oukene"
+  ],
+  "iot_class": "",
+  "version": "1.0.0"
+}
