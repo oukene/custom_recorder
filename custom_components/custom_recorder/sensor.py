@@ -275,13 +275,15 @@ class CustomRecorder(Sensorbase):
         #self._loop.create_task(self.setup())
 
     def setup(self):
-        _LOGGER.debug(f"call setup")
-        state = self.hass.states.get(self._source_entity)
-
-        #self._state = state.state
-
         self.hass.data[DOMAIN][self.entry_id]["listener"].append(async_track_state_change(
             self.hass, self._source_entity, self.entity_listener))
+
+        _LOGGER.debug(f"call setup")
+        state = self.hass.states.get(self._source_entity)
+        if _is_valid_state(state):
+            self._loop.create_task(self.entity_listener(
+                self._source_entity, state, state))
+        #self._state = state.state
 
         #self._state = self.hass.states.get(self._switch_entity).state
 
