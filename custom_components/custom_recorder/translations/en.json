@@ -25,7 +25,7 @@
                 "data": {
                     "switch_entity": "input source entity",
                     "name": "recorder sensor name",
-                    "record_period": "record period(days)",
+                    "record_period": "record save period(days)",
                     "add_another": "add more switch"
                 }
             }
