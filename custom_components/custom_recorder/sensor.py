@@ -18,9 +18,11 @@ from homeassistant.const import (
     STATE_UNKNOWN, STATE_UNAVAILABLE, ATTR_UNIT_OF_MEASUREMENT, ATTR_ICON
 )
 
+import copy
 import os
 import asyncio
 from datetime import datetime, date, timedelta
+from dateutil.relativedelta import relativedelta
 
 from homeassistant import components
 from homeassistant import util
@@ -29,7 +31,7 @@ from homeassistant.helpers.entity import Entity
 from .const import *
 from homeassistant.exceptions import TemplateError
 import homeassistant.helpers.config_validation as cv
-from homeassistant.helpers.entity import Entity, async_generate_entity_id
+from homeassistant.helpers.entity import Entity, generate_entity_id
 from homeassistant.helpers.event import async_track_state_change, track_state_change
 from homeassistant.components.sensor import SensorEntity
 
@@ -77,21 +79,32 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
             isData = None
             isName = line.find(FIELD_NAME)
             isSourceEntity = line.find(FIELD_SOURCE_ENTITY)
+            isRecordPeriodUnit = line.find(FIELD_RECORD_PERIOD_UNIT)
             isRecordPeriod = line.find(FIELD_RECORD_PERIOD)
+            isOffsetUnit = line.find(FIELD_OFFSET_UNIT)
+            isOffset = line.find(FIELD_OFFSET)
             isData = line.find(FIELD_DATA)
             # _LOGGER.debug(f"isName - {isName}, isOriginEntity - {isOriginEntity}, isRecordPeriod - {isRecordPeriod}")
             if isName == 0:
                 name = lines[idx + 1].replace("\n", "")
             if isSourceEntity == 0:
                 source_entity = lines[idx + 1].replace("\n", "")
+            if isRecordPeriodUnit == 0:
+                record_period_unit = lines[idx + 1].replace("\n", "")
             if isRecordPeriod == 0:
                 record_period = lines[idx + 1].replace("\n", "")
+            if isOffsetUnit == 0:
+                offset_unit = lines[idx+1].replace("\n", "")
+            if isOffset == 0:
+                offset = lines[idx+1].replace("\n", "")
             if isData == 0:
                 # 기록된 데이터를 모두 읽은은 후 종료
                 d = lines[idx+1].replace("\n", "")
                 d = d.split(",")
                 #if datetime(d[0]) < datetime.now() - timedelta(days=int(record_period)):
-                if datetime.strptime(d[0], '%Y-%m-%d %H:%M:%S.%f') < datetime.now() - timedelta(days=int(record_period)):
+                args = {}
+                args[record_period_unit] = int(record_period)
+                if datetime.strptime(d[0], '%Y-%m-%d %H:%M:%S.%f') < datetime.now() - timedelta(**args):
                     continue
                 d[0] = d[0]
                 d[1] = d[1]
@@ -99,7 +112,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                 #_LOGGER.debug(f"d - {d[0]}, val - {d[1]}")
                 data[str(d[0])] = d[1]
 
-        if name != None and source_entity != None and record_period != None:
+        if name != None and source_entity != None and record_period != None and offset_unit != None and offset != None and record_period_unit != None:
             #d = {'origin_entity': origin_entity,
             #        'name': name, 'record_period': record_period}
             #_LOGGER.debug(f"add entity - {d}")
@@ -110,7 +123,10 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                     device,
                     name,
                     source_entity,
+                    record_period_unit,
                     record_period,
+                    offset_unit,
+                    offset,
                     data,
                     file,
                     d[1],
@@ -122,8 +138,14 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
             f.write(name + "\n")
             f.write(FIELD_SOURCE_ENTITY)
             f.write(source_entity + "\n")
+            f.write(FIELD_RECORD_PERIOD_UNIT)
+            f.write(record_period_unit + "\n")
             f.write(FIELD_RECORD_PERIOD)
             f.write(record_period + "\n")
+            f.write(FIELD_OFFSET_UNIT)
+            f.write(offset_unit + "\n")
+            f.write(FIELD_OFFSET)
+            f.write(offset + "\n")
 
             for d in data:
                 f.write(FIELD_DATA)
@@ -243,7 +265,7 @@ class Sensorbase(SensorEntity):
 class CustomRecorder(Sensorbase):
     """Representation of a Thermal Comfort Sensor."""
 
-    def __init__(self, hass, entry_id, device, entity_name, source_entity, record_period, data, file, last_data):
+    def __init__(self, hass, entry_id, device, entity_name, source_entity, record_period_unit, record_period, offset_unit, offset, data, file, last_data):
         """Initialize the sensor."""
         super().__init__(device)
 
@@ -252,15 +274,20 @@ class CustomRecorder(Sensorbase):
         self._source_entity = source_entity
         _LOGGER.debug(f"data file - {DATA_DIR + file}")
         
-        self.entity_id = async_generate_entity_id(
+        self.entity_id = generate_entity_id(
             ENTITY_ID_FORMAT, "{}_{}".format(NAME, entity_name), hass=hass)
         self._name = "{}".format(entity_name)
         # self._name = "{} {}".format(device.device_id, SENSOR_TYPES[sensor_type][1])
         self._unit_of_measurement = None
         self._state = last_data
+        self._offset_unit = offset_unit
+        self._offset = offset
         self._attributes = {}
         self._attributes["source entity id"] = source_entity
+        self._attributes["record period unit"] = record_period_unit
         self._attributes["record period"] = record_period
+        self._attributes["offset unit"] = offset_unit
+        self._attributes["offset"] = offset
         self._attributes["data file"] = file
         self._attributes["data"] = data
         self._icon = None
@@ -278,17 +305,18 @@ class CustomRecorder(Sensorbase):
         self.hass.data[DOMAIN][self.entry_id]["listener"].append(async_track_state_change(
             self.hass, self._source_entity, self.entity_listener))
 
-        _LOGGER.debug(f"call setup")
+        
         state = self.hass.states.get(self._source_entity)
+        old_state = self.hass.states.get(self.entity_id)
         if _is_valid_state(state):
             self._loop.create_task(self.entity_listener(
-                self._source_entity, state, state))
+                self._source_entity, old_state, state))
         #self._state = state.state
 
         #self._state = self.hass.states.get(self._switch_entity).state
 
     async def entity_listener(self, entity, old_state, new_state):
-        try:
+        #try:
             if _is_valid_state(new_state):
                 if self._setup == False:
                     self._unit_of_measurement = new_state.attributes.get(
@@ -301,8 +329,11 @@ class CustomRecorder(Sensorbase):
                 self.schedule_update_ha_state(True)
                 # 데이터를 파일에 저장
                 # 데이터가 하나도 기록된 게 없다면 첫 데이터이므로 저장하고 아닐때는 값이 바뀔때만 저장
-                if (_is_valid_state(old_state) and old_state.state != new_state.state) or len(self._attributes["data"]) <= 0:
-                    now = datetime.now()
+                if (_is_valid_state(old_state) and old_state.state != new_state.state) or (len(self._attributes["data"]) <= 0):
+                    args = {}
+                    args[self._offset_unit] = int(self._offset)
+                    #_LOGGER.debug(f"offset unit : {self._offset_unit}, offset : {self._offset}")
+                    now = datetime.now() + relativedelta(**args)
                     str_now = now.strftime('%Y-%m-%d %H:%M:%S.%f')
                     self._attributes["data"][str_now] = self._state
                     data = "[data]\n" + str_now + ',' + self._state + "\n"
@@ -313,8 +344,8 @@ class CustomRecorder(Sensorbase):
                 #_LOGGER.debug("call switch_entity_listener, old state : %s, new_state : %s",
                 #          old_state, new_state.state)  
 
-        except Exception as e:
-            _LOGGER.error(f"catch error - {e}")
+        #except Exception as e:
+        #    _LOGGER.error(f"catch error - {e}")
 
     """Sensor Properties"""
     @property

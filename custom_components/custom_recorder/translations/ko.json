@@ -25,7 +25,10 @@
                 "data": {
                     "source_entity": "\uc6d0\ubcf8\u0020\uc5d4\ud2f0\ud2f0\ub97c\u0020\uc785\ub825\ud558\uc138\uc694",
                     "name": "\ub808\ucf54\ub354\u0020\uc13c\uc11c\uc758\u0020\uc774\ub984\uc744\u0020\uc785\ub825\ud558\uc138\uc694",
-                    "record_period": "\uae30\ub85d\u0020\uc800\uc7a5\u0020\uae30\uac04\u000d",
+                    "record_period_unit": "\ub370\uc774\ud130\u0020\uae30\ub85d\u0020\uae30\uac04\u0020\ub2e8\uc704",
+                    "record_period": "\ub370\uc774\ud130\u0020\uae30\ub85d\u0020\uae30\uac04",
+                    "offset_unit": "\ub370\uc774\ud130\u0020\uae30\ub85d\u0020\uc2dc\uac04\u0020\uc624\ud504\uc14b\u0020\ub2e8\uc704",
+                    "offset": "\ub370\uc774\ud130\u0020\uae30\ub85d\u0020\uc2dc\uac04\u0020\uc624\ud504\uc14b",
                     "add_another": "\ub808\ucf54\ub354\u0020\uc5d4\ud2f0\ud2f0\u0020\ucd94\uac00"
                 }
             }

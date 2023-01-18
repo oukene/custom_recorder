@@ -108,19 +108,32 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 #_LOGGER.debug(f"idx - {idx}, line = {line}")
                 isName = line.find(FIELD_NAME)
                 isSourceEntity = line.find(FIELD_SOURCE_ENTITY)
+                isRecordPeriodUnit = line.find(FIELD_RECORD_PERIOD_UNIT)
                 isRecordPeriod = line.find(FIELD_RECORD_PERIOD)
+                isOffsetUnit = line.find(FIELD_OFFSET_UNIT)
+                isOffset = line.find(FIELD_OFFSET)
                 #_LOGGER.debug(f"isName - {isName}, isOriginEntity - {isOriginEntity}, isRecordPeriod - {isRecordPeriod}")
 
                 if isName == 0:
                     name = lines[idx + 1].replace("\n", "")
                 if isSourceEntity == 0:
                     source_entity = lines[idx + 1].replace("\n", "")
+                if isRecordPeriodUnit == 0:
+                    record_period_unit = lines[idx + 1].replace("\n", "")
                 if isRecordPeriod == 0:
                     record_period = lines[idx + 1].replace("\n", "")
+                if isOffsetUnit == 0:
+                    offset_unit = lines[idx+1].replace("\n", "")
+                if isOffset == 0:
+                    offset = lines[idx+1].replace("\n", "")
 
-            if name != None and source_entity != None and record_period != None:
-                d = {'source_entity': source_entity,
-                     'name': name, 'record_period': record_period}
+            if name != None and source_entity != None and record_period != None and offset_unit != None and offset != None and record_period_unit != None:
+                d = {CONF_SOURCE_ENTITY: source_entity,
+                     CONF_NAME: name, 
+                     CONF_RECORD_PERIOD_UNIT: record_period_unit,
+                     CONF_RECORD_PERIOD: record_period, 
+                     CONF_OFFSET_UNIT: offset_unit, 
+                     CONF_OFFSET: offset}
                 self.data[CONF_ENTITIES].append(d)
             f.close()
 
@@ -176,7 +189,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     all_entities_by_id[(
                                         host[CONF_SOURCE_ENTITY],
                                         host[CONF_NAME],
-                                        host[CONF_RECORD_PERIOD]
+                                        host[CONF_RECORD_PERIOD_UNIT],
+                                        host[CONF_RECORD_PERIOD],
+                                        host[CONF_OFFSET_UNIT],
+                                        host[CONF_OFFSET]
                     )] = e.entity_id
 
         if user_input is not None:
@@ -201,7 +217,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                             {
                                 CONF_SOURCE_ENTITY: key[0],
                                 CONF_NAME: key[1],
-                                CONF_RECORD_PERIOD: key[2]
+                                CONF_RECORD_PERIOD_UNIT: key[2],
+                                CONF_RECORD_PERIOD: key[3],
+                                CONF_OFFSET_UNIT: key[4],
+                                CONF_OFFSET: key[5]
                             }
                         )
                         
@@ -251,7 +270,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     {
                         CONF_SOURCE_ENTITY: user_input[CONF_SOURCE_ENTITY],
                         CONF_NAME: user_input.get(CONF_NAME, user_input[CONF_SOURCE_ENTITY]),
+                        CONF_RECORD_PERIOD_UNIT: user_input[CONF_RECORD_PERIOD_UNIT],
                         CONF_RECORD_PERIOD: user_input[CONF_RECORD_PERIOD],
+                        CONF_OFFSET_UNIT: user_input[CONF_OFFSET_UNIT],
+                        CONF_OFFSET: user_input[CONF_OFFSET]
                     }
                 )
 
@@ -273,14 +295,22 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     if e[CONF_NAME] + ".txt" not in file_list:
                         # 파일 생성
                         f = open(DATA_DIR + e[CONF_NAME] + ".txt", "w")
-                        # 파일 형식에 맞게 데이터 셋팅
+                        # 파일 형식에 맞게 데이터 셋팅                        
                         f.write(FIELD_NAME)
                         f.write(e[CONF_NAME] + "\n")
                         f.write(FIELD_SOURCE_ENTITY)
                         f.write(e[CONF_SOURCE_ENTITY] + "\n")
+                        f.write(FIELD_RECORD_PERIOD_UNIT)
+                        f.write(e[CONF_RECORD_PERIOD_UNIT] + "\n")
                         f.write(FIELD_RECORD_PERIOD)
                         f.write(str(e[CONF_RECORD_PERIOD]) + "\n")
+                        f.write(FIELD_OFFSET_UNIT)
+                        f.write(e[CONF_OFFSET_UNIT] + "\n")
+                        f.write(FIELD_OFFSET)
+                        f.write(str(e[CONF_OFFSET]) + "\n")
+
                         f.close()
+                        _LOGGER.debug(f"file write end")
 
                 return self.async_create_entry(title=NAME, data=self.data)
 
@@ -290,7 +320,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     {
                         vol.Required(CONF_SOURCE_ENTITY, default=None): cv.string,
                         vol.Optional(CONF_NAME): cv.string,
-                        vol.Required(CONF_RECORD_PERIOD, default=30): int,
+                        vol.Required(CONF_RECORD_PERIOD_UNIT, default=DATE_UNIT[0]): vol.In(DATE_UNIT),
+                        vol.Required(CONF_RECORD_PERIOD, default=1): int,
+                        vol.Required(CONF_OFFSET_UNIT, default=DATE_UNIT[0]): vol.In(DATE_UNIT),
+                        vol.Required(CONF_OFFSET, default=0): int,
                         vol.Optional(CONF_ADD_ANODHER): cv.boolean,
                     }
             ), errors=errors

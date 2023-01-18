@@ -25,8 +25,11 @@
                 "data": {
                     "switch_entity": "input source entity",
                     "name": "recorder sensor name",
-                    "record_period": "record save period(days)",
-                    "add_another": "add more switch"
+                    "record_period_unit": "record save period unit",
+                    "record_period": "record save period",
+                    "offset_unit": "record time offset unit",
+                    "offset": "record time offset",
+                    "add_another": "add more recorder"
                 }
             }
         }
