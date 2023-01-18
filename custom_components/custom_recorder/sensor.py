@@ -104,7 +104,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                 #if datetime(d[0]) < datetime.now() - timedelta(days=int(record_period)):
                 args = {}
                 args[record_period_unit] = int(record_period)
-                if datetime.strptime(d[0], '%Y-%m-%d %H:%M:%S.%f') < datetime.now() - timedelta(**args):
+                if datetime.strptime(d[0], '%Y-%m-%d %H:%M:%S.%f') < datetime.now() - relativedelta(**args):
                     continue
                 d[0] = d[0]
                 d[1] = d[1]
