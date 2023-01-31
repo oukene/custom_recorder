@@ -272,7 +272,8 @@ class CustomRecorder(Sensorbase):
         self.hass = hass
         self.entry_id = entry_id
         self._source_entity = source_entity
-        _LOGGER.debug(f"data file - {DATA_DIR + file}")
+        _LOGGER.debug(
+            f"data file - {DATA_DIR + file}, last_date - {last_data}")
         
         self.entity_id = generate_entity_id(
             ENTITY_ID_FORMAT, "{}_{}".format(NAME, entity_name), hass=hass)
@@ -298,6 +299,8 @@ class CustomRecorder(Sensorbase):
         self._device = device
         self._setup = False
 
+        self._device.publish_updates()
+
         self.setup()
         #self._loop.create_task(self.setup())
 
@@ -315,8 +318,9 @@ class CustomRecorder(Sensorbase):
 
         #self._state = self.hass.states.get(self._switch_entity).state
 
-    async def entity_listener(self, entity, old_state, new_state):
+    def entity_listener(self, entity, old_state, new_state):
         #try:
+            _LOGGER.debug("call entity listener")
             if _is_valid_state(new_state):
                 if self._setup == False:
                     self._unit_of_measurement = new_state.attributes.get(
@@ -325,11 +329,13 @@ class CustomRecorder(Sensorbase):
                         ATTR_ICON)
                     self._setup = True
 
-                self._state = new_state.state
-                self.schedule_update_ha_state(True)
                 # 데이터를 파일에 저장
                 # 데이터가 하나도 기록된 게 없다면 첫 데이터이므로 저장하고 아닐때는 값이 바뀔때만 저장
-                if (_is_valid_state(old_state) and old_state.state != new_state.state) or (len(self._attributes["data"]) <= 0):
+                _LOGGER.debug(f"old_state - {old_state}, new_state - {new_state}")
+                #if (_is_valid_state(old_state) and old_state.state != new_state.state) or (len(self._attributes["data"]) <= 0 or self._state != new_state.state):
+                if (len(self._attributes["data"]) <= 0 or self._state != new_state.state):
+                    self._state = new_state.state
+                    self.schedule_update_ha_state(True)
                     args = {}
                     args[self._offset_unit] = int(self._offset)
                     #_LOGGER.debug(f"offset unit : {self._offset_unit}, offset : {self._offset}")
