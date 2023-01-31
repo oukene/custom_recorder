@@ -8,7 +8,7 @@ import homeassistant.helpers.config_validation as cv
 # name for the integration.
 DOMAIN = "custom_recorder"
 NAME = "Custom Recorder"
-VERSION = "1.0.1"
+VERSION = "1.0.2"
 
 CONF_DEVICE_NAME = "device_name"
 CONF_SOURCE_ENTITY = "source_entity"
