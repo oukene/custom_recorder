@@ -312,43 +312,42 @@ class CustomRecorder(Sensorbase):
         state = self.hass.states.get(self._source_entity)
         old_state = self.hass.states.get(self.entity_id)
         if _is_valid_state(state):
-            self._loop.create_task(self.entity_listener(
-                self._source_entity, old_state, state))
+            self.entity_listener(self._source_entity, old_state, state)
         #self._state = state.state
 
         #self._state = self.hass.states.get(self._switch_entity).state
 
     def entity_listener(self, entity, old_state, new_state):
         #try:
-            _LOGGER.debug("call entity listener")
-            if _is_valid_state(new_state):
-                if self._setup == False:
-                    self._unit_of_measurement = new_state.attributes.get(
-                        ATTR_UNIT_OF_MEASUREMENT)
-                    self._icon = new_state.attributes.get(
-                        ATTR_ICON)
-                    self._setup = True
+        _LOGGER.debug("call entity listener")
+        if _is_valid_state(new_state):
+            self._unit_of_measurement = new_state.attributes.get(
+                ATTR_UNIT_OF_MEASUREMENT)
+            self._icon = new_state.attributes.get(
+                ATTR_ICON)
+            
+            _LOGGER.debug(f"set unit - {self._unit_of_measurement}")
 
-                # 데이터를 파일에 저장
-                # 데이터가 하나도 기록된 게 없다면 첫 데이터이므로 저장하고 아닐때는 값이 바뀔때만 저장
-                _LOGGER.debug(f"old_state - {old_state}, new_state - {new_state}")
-                #if (_is_valid_state(old_state) and old_state.state != new_state.state) or (len(self._attributes["data"]) <= 0 or self._state != new_state.state):
-                if (len(self._attributes["data"]) <= 0 or self._state != new_state.state):
-                    self._state = new_state.state
-                    self.schedule_update_ha_state(True)
-                    args = {}
-                    args[self._offset_unit] = int(self._offset)
-                    #_LOGGER.debug(f"offset unit : {self._offset_unit}, offset : {self._offset}")
-                    now = datetime.now() + relativedelta(**args)
-                    str_now = now.strftime('%Y-%m-%d %H:%M:%S.%f')
-                    self._attributes["data"][str_now] = self._state
-                    data = "[data]\n" + str_now + ',' + self._state + "\n"
-                    #_LOGGER.debug(f"data - {data}")
-                    fp = open(DATA_DIR + self._attributes["data file"], "a")
-                    fp.write(data)
-                    fp.close()
-                #_LOGGER.debug("call switch_entity_listener, old state : %s, new_state : %s",
-                #          old_state, new_state.state)  
+            # 데이터를 파일에 저장
+            # 데이터가 하나도 기록된 게 없다면 첫 데이터이므로 저장하고 아닐때는 값이 바뀔때만 저장
+            _LOGGER.debug(f"old_state - {old_state}, new_state - {new_state}")
+            #if (_is_valid_state(old_state) and old_state.state != new_state.state) or (len(self._attributes["data"]) <= 0 or self._state != new_state.state):
+            if (len(self._attributes["data"]) <= 0 or self._state != new_state.state):
+                self._state = new_state.state
+                args = {}
+                args[self._offset_unit] = int(self._offset)
+                #_LOGGER.debug(f"offset unit : {self._offset_unit}, offset : {self._offset}")
+                now = datetime.now() + relativedelta(**args)
+                str_now = now.strftime('%Y-%m-%d %H:%M:%S.%f')
+                self._attributes["data"][str_now] = self._state
+                data = "[data]\n" + str_now + ',' + self._state + "\n"
+                #_LOGGER.debug(f"data - {data}")
+                fp = open(DATA_DIR + self._attributes["data file"], "a")
+                fp.write(data)
+                fp.close()
+            #_LOGGER.debug("call switch_entity_listener, old state : %s, new_state : %s",
+            #          old_state, new_state.state)  
+            self.schedule_update_ha_state(True)
 
         #except Exception as e:
         #    _LOGGER.error(f"catch error - {e}")
