@@ -14,4 +14,4 @@ HomeAssistant 에서 엔티티의 변경 기록을 외부 파일에 저장하는
 * 각 항목에 맞게 설정 후 추가를 완료하면 원본 엔티티의 값이 변경될 때 마다 HomeAssistant 의 config/custom_recorder/data 폴더에 파일을 생성하여 데이터가 기록 됨
 <br/>
 <br/>
-![settings2.jpg](images/add_entity.jpg)
+![settings2.jpg](https://github.com/oukene/custom_recorder/blob/main/images/add_entity.jpg)
