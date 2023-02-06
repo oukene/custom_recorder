@@ -104,6 +104,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 #_LOGGER.debug(f"idx - {idx}, line = {line}")
                 isName = line.find(FIELD_NAME)
                 isSourceEntity = line.find(FIELD_SOURCE_ENTITY)
+                isSourceEntityAttr = line.find(FIELD_SOURCE_ENTITY_ATTR)
                 isRecordPeriodUnit = line.find(FIELD_RECORD_PERIOD_UNIT)
                 isRecordPeriod = line.find(FIELD_RECORD_PERIOD)
                 isOffsetUnit = line.find(FIELD_OFFSET_UNIT)
@@ -114,6 +115,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     name = lines[idx + 1].replace("\n", "")
                 if isSourceEntity == 0:
                     source_entity = lines[idx + 1].replace("\n", "")
+                if isSourceEntityAttr == 0:
+                    source_entity_attr = lines[idx+1].replace("\n", "")
                 if isRecordPeriodUnit == 0:
                     record_period_unit = lines[idx + 1].replace("\n", "")
                 if isRecordPeriod == 0:
@@ -123,8 +126,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 if isOffset == 0:
                     offset = lines[idx+1].replace("\n", "")
 
-            if name != None and source_entity != None and record_period != None and offset_unit != None and offset != None and record_period_unit != None:
+            if source_entity != None and record_period != None and offset_unit != None and offset != None and record_period_unit != None:
                 d = {CONF_SOURCE_ENTITY: source_entity,
+                     CONF_SOURCE_ENTITY_ATTR: source_entity_attr,
                      CONF_NAME: name, 
                      CONF_RECORD_PERIOD_UNIT: record_period_unit,
                      CONF_RECORD_PERIOD: record_period, 
@@ -184,6 +188,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
                     all_entities_by_id[(
                                         host[CONF_SOURCE_ENTITY],
+                                        host[CONF_SOURCE_ENTITY_ATTR],
                                         host[CONF_NAME],
                                         host[CONF_RECORD_PERIOD_UNIT],
                                         host[CONF_RECORD_PERIOD],
@@ -205,18 +210,19 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         f"all entities by id key - {all_entities_by_id[key]}")
                     if all_entities_by_id[key] not in user_input[CONF_ENTITIES]:
                         _LOGGER.debug("remove entity : %s", all_entities_by_id[key])
-                        remove_entities[all_entities_by_id[key]] = key[1]
+                        remove_entities[all_entities_by_id[key]] = key[2]
                         #self.config_entry.data[CONF_DEVICES].remove( { host[CONF_HOST], [e.name for e in devices if e.id == all_devices_by_host[host[CONF_HOST]]] })
                     else:
                         _LOGGER.debug("append entity : %s", key[0])
                         self.data[CONF_ENTITIES].append(
                             {
                                 CONF_SOURCE_ENTITY: key[0],
-                                CONF_NAME: key[1],
-                                CONF_RECORD_PERIOD_UNIT: key[2],
-                                CONF_RECORD_PERIOD: key[3],
-                                CONF_OFFSET_UNIT: key[4],
-                                CONF_OFFSET: key[5]
+                                CONF_SOURCE_ENTITY_ATTR: key[1],
+                                CONF_NAME: key[2],
+                                CONF_RECORD_PERIOD_UNIT: key[3],
+                                CONF_RECORD_PERIOD: key[4],
+                                CONF_OFFSET_UNIT: key[5],
+                                CONF_OFFSET: key[6]
                             }
                         )
                         
@@ -265,6 +271,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 self.data[CONF_ENTITIES].append(
                     {
                         CONF_SOURCE_ENTITY: user_input[CONF_SOURCE_ENTITY],
+                        CONF_SOURCE_ENTITY_ATTR: user_input.get("", user_input[CONF_SOURCE_ENTITY_ATTR]),
                         CONF_NAME: user_input.get(CONF_NAME, user_input[CONF_SOURCE_ENTITY]),
                         CONF_RECORD_PERIOD_UNIT: user_input[CONF_RECORD_PERIOD_UNIT],
                         CONF_RECORD_PERIOD: user_input[CONF_RECORD_PERIOD],
@@ -296,6 +303,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         f.write(e[CONF_NAME] + "\n")
                         f.write(FIELD_SOURCE_ENTITY)
                         f.write(e[CONF_SOURCE_ENTITY] + "\n")
+                        f.write(FIELD_SOURCE_ENTITY_ATTR)
+                        f.write(e[CONF_SOURCE_ENTITY_ATTR] + "\n")
                         f.write(FIELD_RECORD_PERIOD_UNIT)
                         f.write(e[CONF_RECORD_PERIOD_UNIT] + "\n")
                         f.write(FIELD_RECORD_PERIOD)
@@ -315,6 +324,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             data_schema=vol.Schema(
                     {
                         vol.Required(CONF_SOURCE_ENTITY, default=None): cv.string,
+                        vol.Optional(CONF_SOURCE_ENTITY_ATTR, default="None"): cv.string,
                         vol.Optional(CONF_NAME): cv.string,
                         vol.Required(CONF_RECORD_PERIOD_UNIT, default=DATE_UNIT[0]): vol.In(DATE_UNIT),
                         vol.Required(CONF_RECORD_PERIOD, default=1): int,

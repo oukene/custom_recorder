@@ -60,7 +60,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     if os.path.isdir(DATA_DIR) == False:
         os.makedirs(DATA_DIR)
 
-
+    
     # 디렉토리에 있는 목록으로 config 대체
     file_list = os.listdir(DATA_DIR)
     d = [None, None]
@@ -70,6 +70,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
         lines = f.readlines()
         name = None
         source_entity = None
+        source_entity_attr = None
         record_period = None
         data = {}
         for idx, line in enumerate(lines):
@@ -79,6 +80,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
             isData = None
             isName = line.find(FIELD_NAME)
             isSourceEntity = line.find(FIELD_SOURCE_ENTITY)
+            isSourceEntityAttr = line.find(FIELD_SOURCE_ENTITY_ATTR)
             isRecordPeriodUnit = line.find(FIELD_RECORD_PERIOD_UNIT)
             isRecordPeriod = line.find(FIELD_RECORD_PERIOD)
             isOffsetUnit = line.find(FIELD_OFFSET_UNIT)
@@ -89,6 +91,10 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                 name = lines[idx + 1].replace("\n", "")
             if isSourceEntity == 0:
                 source_entity = lines[idx + 1].replace("\n", "")
+            if isSourceEntityAttr == 0:
+                source_entity_attr = lines[idx + 1].replace("\n", "")
+                if source_entity_attr == "None":
+                    source_entity_attr = None
             if isRecordPeriodUnit == 0:
                 record_period_unit = lines[idx + 1].replace("\n", "")
             if isRecordPeriod == 0:
@@ -112,7 +118,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                 #_LOGGER.debug(f"d - {d[0]}, val - {d[1]}")
                 data[str(d[0])] = d[1]
 
-        if name != None and source_entity != None and record_period != None and offset_unit != None and offset != None and record_period_unit != None:
+        if source_entity != None and record_period != None and offset_unit != None and offset != None and record_period_unit != None:
             #d = {'origin_entity': origin_entity,
             #        'name': name, 'record_period': record_period}
             #_LOGGER.debug(f"add entity - {d}")
@@ -123,6 +129,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                     device,
                     name,
                     source_entity,
+                    source_entity_attr,
                     record_period_unit,
                     record_period,
                     offset_unit,
@@ -135,9 +142,11 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
             f.close()
             f=open(DATA_DIR + file, "w")
             f.write(FIELD_NAME)
-            f.write(name + "\n")
+            f.write(str(name) + "\n")
             f.write(FIELD_SOURCE_ENTITY)
             f.write(source_entity + "\n")
+            f.write(FIELD_SOURCE_ENTITY_ATTR)
+            f.write(str(source_entity_attr) + "\n")
             f.write(FIELD_RECORD_PERIOD_UNIT)
             f.write(record_period_unit + "\n")
             f.write(FIELD_RECORD_PERIOD)
@@ -265,13 +274,14 @@ class Sensorbase(SensorEntity):
 class CustomRecorder(Sensorbase):
     """Representation of a Thermal Comfort Sensor."""
 
-    def __init__(self, hass, entry_id, device, entity_name, source_entity, record_period_unit, record_period, offset_unit, offset, data, file, last_data):
+    def __init__(self, hass, entry_id, device, entity_name, source_entity, source_entity_attr, record_period_unit, record_period, offset_unit, offset, data, file, last_data):
         """Initialize the sensor."""
         super().__init__(device)
 
         self.hass = hass
         self.entry_id = entry_id
         self._source_entity = source_entity
+        self._source_entity_attr = source_entity_attr
         _LOGGER.debug(
             f"data file - {DATA_DIR + file}, last_date - {last_data}")
         
@@ -285,6 +295,7 @@ class CustomRecorder(Sensorbase):
         self._offset = offset
         self._attributes = {}
         self._attributes["source entity id"] = source_entity
+        self._attributes["source entity attribute"] = source_entity_attr
         self._attributes["record period unit"] = record_period_unit
         self._attributes["record period"] = record_period
         self._attributes["offset unit"] = offset_unit
@@ -326,20 +337,28 @@ class CustomRecorder(Sensorbase):
             self._icon = new_state.attributes.get(
                 ATTR_ICON)
             
-            _LOGGER.debug(f"set unit - {self._unit_of_measurement}")
+            _LOGGER.debug(f"source entity attr - {self._source_entity_attr}")
 
             # 데이터를 파일에 저장
             # 데이터가 하나도 기록된 게 없다면 첫 데이터이므로 저장하고 아닐때는 값이 바뀔때만 저장
             _LOGGER.debug(f"old_state - {old_state}, new_state - {new_state}")
             #if (_is_valid_state(old_state) and old_state.state != new_state.state) or (len(self._attributes["data"]) <= 0 or self._state != new_state.state):
-            if (len(self._attributes["data"]) <= 0 or self._state != new_state.state):
-                self._state = new_state.state
+
+            if (len(self._attributes["data"]) <= 0 or 
+                (self._source_entity_attr == None and self._state != new_state.state) or
+                (self._source_entity_attr != None and self._state != new_state.attributes.get(self._source_entity_attr))
+                ):
+                if self._source_entity_attr != None:
+                    self._state = new_state.attributes.get(self._source_entity_attr)
+                else:
+                    self._state = new_state.state
                 args = {}
                 args[self._offset_unit] = int(self._offset)
                 #_LOGGER.debug(f"offset unit : {self._offset_unit}, offset : {self._offset}")
                 now = datetime.now() + relativedelta(**args)
                 str_now = now.strftime('%Y-%m-%d %H:%M:%S.%f')
                 self._attributes["data"][str_now] = self._state
+                _LOGGER.debug(f"self._state - {self._state}")
                 data = "[data]\n" + str_now + ',' + self._state + "\n"
                 #_LOGGER.debug(f"data - {data}")
                 fp = open(DATA_DIR + self._attributes["data file"], "a")

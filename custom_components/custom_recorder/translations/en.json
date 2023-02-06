@@ -23,7 +23,8 @@
             "entity": {
                 "title": "add entity",
                 "data": {
-                    "switch_entity": "input source entity",
+                    "source_entity": "input source entity",
+                    "source_entity_attr": "input source entity attribute",
                     "name": "recorder sensor name",
                     "record_period_unit": "record save period unit",
                     "record_period": "record save period",

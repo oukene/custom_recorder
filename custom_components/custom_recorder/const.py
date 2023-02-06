@@ -8,10 +8,11 @@ import homeassistant.helpers.config_validation as cv
 # name for the integration.
 DOMAIN = "custom_recorder"
 NAME = "Custom Recorder"
-VERSION = "1.0.3"
+VERSION = "1.0.4"
 
 CONF_DEVICE_NAME = "device_name"
 CONF_SOURCE_ENTITY = "source_entity"
+CONF_SOURCE_ENTITY_ATTR = "source_entity_attr"
 CONF_ENTITIES = "entities"
 CONF_ADD_ANODHER = "add_another"
 CONF_NAME = "name"
@@ -27,6 +28,7 @@ DATA_DIR = DIR_PATH + DATA_PATH
 
 FIELD_NAME = "[name]\n"
 FIELD_SOURCE_ENTITY = "[source_entity]\n"
+FIELD_SOURCE_ENTITY_ATTR = "[source_entity_attr]\n"
 FIELD_RECORD_PERIOD_UNIT = "[record_period_unit]\n"
 FIELD_RECORD_PERIOD = "[record_period]\n"
 FIELD_OFFSET_UNIT = "[offset_unit]\n"
