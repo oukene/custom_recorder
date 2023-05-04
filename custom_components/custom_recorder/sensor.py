@@ -5,37 +5,20 @@
 # to display it in the UI (for know types). The unit_of_measurement property tells HA
 # what the unit is, so it can display the correct range. For predefined types (such as
 # battery), the unit_of_measurement should match what's expected.
-import decimal
-from distutils.command.config import config
-import random
 import logging
-from threading import Timer
-import time
-from xmlrpc.client import boolean
-import homeassistant
-from typing import Optional
 from homeassistant.const import (
     STATE_UNKNOWN, STATE_UNAVAILABLE, ATTR_UNIT_OF_MEASUREMENT, ATTR_ICON
 )
 
-import copy
 import os
 import asyncio
-from datetime import datetime, date, timedelta
+from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
-from homeassistant import components
-from homeassistant import util
-from homeassistant.helpers.entity import Entity
-
 from .const import *
-from homeassistant.exceptions import TemplateError
-import homeassistant.helpers.config_validation as cv
-from homeassistant.helpers.entity import Entity, generate_entity_id
-from homeassistant.helpers.event import async_track_state_change, track_state_change
+from homeassistant.helpers.entity import generate_entity_id
+from homeassistant.helpers.event import async_track_state_change
 from homeassistant.components.sensor import SensorEntity
-
-import math
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -109,8 +92,11 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                 d = d.split(",")
                 #if datetime(d[0]) < datetime.now() - timedelta(days=int(record_period)):
                 args = {}
+                offset_args = {}
                 args[record_period_unit] = int(record_period)
-                if datetime.strptime(d[0], '%Y-%m-%d %H:%M:%S.%f') < datetime.now() - relativedelta(**args):
+                # offset 설정만큼 보정
+                offset_args[offset_unit] = int(offset)
+                if datetime.strptime(d[0], '%Y-%m-%d %H:%M:%S.%f') < datetime.now() - relativedelta(**args) - relativedelta(**offset_args):
                     continue
                 d[0] = d[0]
                 d[1] = d[1]

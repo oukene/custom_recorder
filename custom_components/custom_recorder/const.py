@@ -1,14 +1,9 @@
-"""Constants for the Detailed Hello World Push integration."""
-from typing import DefaultDict
-import voluptuous as vol
-import homeassistant.helpers.config_validation as cv
-
 
 # This is the internal name of the integration, it should also match the directory
 # name for the integration.
 DOMAIN = "custom_recorder"
 NAME = "Custom Recorder"
-VERSION = "1.0.4"
+VERSION = "1.0.5"
 
 CONF_DEVICE_NAME = "device_name"
 CONF_SOURCE_ENTITY = "source_entity"
