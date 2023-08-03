@@ -10,6 +10,7 @@ from homeassistant.const import (
     STATE_UNKNOWN, STATE_UNAVAILABLE, ATTR_UNIT_OF_MEASUREMENT, ATTR_ICON
 )
 
+import numpy
 import os
 import asyncio
 from datetime import datetime
@@ -28,6 +29,13 @@ _LOGGER = logging.getLogger(__name__)
 # required.
 
 ENTITY_ID_FORMAT = DOMAIN + ".{}"
+
+def isNumber(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
 
 
 async def async_setup_entry(hass, config_entry, async_add_devices):
@@ -102,7 +110,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                 d[1] = d[1]
                 #d[1] = d[1].replace('\n', '')
                 #_LOGGER.debug(f"d - {d[0]}, val - {d[1]}")
-                data[str(d[0])] = d[1]
+                data[str(d[0])] = float(d[1]) if isNumber(d[1]) else d[1]
 
         if source_entity != None and record_period != None and offset_unit != None and offset != None and record_period_unit != None:
             #d = {'origin_entity': origin_entity,
@@ -144,7 +152,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
 
             for d in data:
                 f.write(FIELD_DATA)
-                f.write(d[0] + "," + d[1] + "\n")
+                f.write(d[0] + "," + str(d[1]) + "\n")
 
         f.close()
 
@@ -287,6 +295,7 @@ class CustomRecorder(Sensorbase):
         self._attributes["offset unit"] = offset_unit
         self._attributes["offset"] = offset
         self._attributes["data file"] = file
+        self.calc_statistics(data)
         self._attributes["data"] = data
         self._icon = None
         self._record_period = record_period
@@ -300,6 +309,12 @@ class CustomRecorder(Sensorbase):
 
         self.setup()
         #self._loop.create_task(self.setup())
+
+    def calc_statistics(self, data):
+        # 통계 계산
+        if isNumber(self._state):
+            for key in STATISTICS_TYPE:
+                self._attributes[key] = STATISTICS_TYPE[key](list(data.values()))
 
     def setup(self):
         self.hass.data[DOMAIN][self.entry_id]["listener"].append(async_track_state_change(
@@ -343,13 +358,16 @@ class CustomRecorder(Sensorbase):
                 #_LOGGER.debug(f"offset unit : {self._offset_unit}, offset : {self._offset}")
                 now = datetime.now() + relativedelta(**args)
                 str_now = now.strftime('%Y-%m-%d %H:%M:%S.%f')
-                self._attributes["data"][str_now] = self._state
+                self._attributes["data"][str_now] = float(self._state) if isNumber(self._state) else self._state
                 _LOGGER.debug(f"self._state - {self._state}")
                 data = "[data]\n" + str_now + ',' + self._state + "\n"
                 #_LOGGER.debug(f"data - {data}")
                 fp = open(DATA_DIR + self._attributes["data file"], "a")
                 fp.write(data)
                 fp.close()
+
+                self.calc_statistics(self._attributes["data"])
+
             #_LOGGER.debug("call switch_entity_listener, old state : %s, new_state : %s",
             #          old_state, new_state.state)  
             self.schedule_update_ha_state(True)

@@ -1,4 +1,5 @@
 
+import numpy as np
 # This is the internal name of the integration, it should also match the directory
 # name for the integration.
 DOMAIN = "custom_recorder"
@@ -40,3 +41,13 @@ DATE_UNIT = [
     'seconds', 
     'microseconds',
 ]
+
+STATISTICS_TYPE = {
+    "min": np.min,
+    "max": np.max,
+    "mean": np.mean,
+    "median": np.median,
+    "sum": np.sum,
+    "std": np.std,
+    "var": np.var,
+}
