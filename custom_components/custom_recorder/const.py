@@ -4,7 +4,7 @@ import numpy as np
 # name for the integration.
 DOMAIN = "custom_recorder"
 NAME = "Custom Recorder"
-VERSION = "1.0.6"
+VERSION = "1.0.7"
 
 CONF_DEVICE_NAME = "device_name"
 CONF_SOURCE_ENTITY = "source_entity"
