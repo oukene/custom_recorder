@@ -7,7 +7,7 @@ from datetime import datetime
 import os
 
 import homeassistant.helpers.config_validation as cv
-
+from homeassistant.helpers.selector import selector
 import homeassistant.helpers.entity_registry
 
 from homeassistant.helpers.device_registry import (
@@ -314,7 +314,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             step_id="entity",
             data_schema=vol.Schema(
                     {
-                        vol.Required(CONF_SOURCE_ENTITY, default=None): cv.string,
+                        vol.Required(CONF_SOURCE_ENTITY, default=None): selector({"entity": {}}),
                         vol.Optional(CONF_SOURCE_ENTITY_ATTR, default="None"): cv.string,
                         vol.Optional(CONF_NAME): cv.string,
                         vol.Required(CONF_RECORD_PERIOD_UNIT, default=DATE_UNIT[0]): vol.In(DATE_UNIT),

@@ -32,8 +32,11 @@ ENTITY_ID_FORMAT = DOMAIN + ".{}"
 
 def isNumber(s):
     try:
-        float(s)
-        return True
+        if s != None:
+            float(s)
+            return True
+        else:
+            return False
     except ValueError:
         return False
 
@@ -295,6 +298,8 @@ class CustomRecorder(Sensorbase):
         self._attributes["offset unit"] = offset_unit
         self._attributes["offset"] = offset
         self._attributes["data file"] = file
+        for key in STATISTICS_TYPE:
+            self._attributes[key] = None
         self.calc_statistics(data)
         self._attributes["data"] = data
         self._icon = None
@@ -312,7 +317,7 @@ class CustomRecorder(Sensorbase):
 
     def calc_statistics(self, data):
         # 통계 계산
-        if isNumber(self._state):
+        if isNumber(self._state) and len(data) > 0:
             for key in STATISTICS_TYPE:
                 self._attributes[key] = STATISTICS_TYPE[key](list(data.values()))
 
