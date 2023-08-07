@@ -13,7 +13,7 @@ from homeassistant.const import (
 import numpy
 import os
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
 from .const import *
@@ -57,8 +57,8 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     
     # 디렉토리에 있는 목록으로 config 대체
     file_list = os.listdir(DATA_DIR)
-    d = [None, None]
     for file in file_list:
+        d = [None, None]
         _LOGGER.debug(f"filename - {file}")
         f = open(DATA_DIR + file)
         lines = f.readlines()
@@ -109,11 +109,11 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                 offset_args[offset_unit] = int(offset)
                 if datetime.strptime(d[0], '%Y-%m-%d %H:%M:%S.%f') < datetime.now() - relativedelta(**args) - relativedelta(**offset_args):
                     continue
-                d[0] = d[0]
-                d[1] = d[1]
+                #d[0] = d[0]
+                d[1] = float(d[1]) if isNumber(d[1]) else d[1]
                 #d[1] = d[1].replace('\n', '')
                 #_LOGGER.debug(f"d - {d[0]}, val - {d[1]}")
-                data[str(d[0])] = float(d[1]) if isNumber(d[1]) else d[1]
+                data[str(d[0])] = d[1]
 
         if source_entity != None and record_period != None and offset_unit != None and offset != None and record_period_unit != None:
             #d = {'origin_entity': origin_entity,
@@ -303,6 +303,7 @@ class CustomRecorder(Sensorbase):
         self.calc_statistics(data)
         self._attributes["data"] = data
         self._icon = None
+        self._record_period_unit = record_period_unit
         self._record_period = record_period
         self._loop = asyncio.get_event_loop()
 
@@ -314,6 +315,15 @@ class CustomRecorder(Sensorbase):
 
         self.setup()
         #self._loop.create_task(self.setup())
+
+    #async def async_added_to_hass(self):
+    #    old_state = await self.async_get_last_sensor_data()
+    #    if old_state != None:
+    #        self._state = old_state.native_value
+    #        _LOGGER.debug(f"old_state.state - {old_state.native_value}")
+    #
+    #    self._device.register_callback(self.async_write_ha_state)
+
 
     def calc_statistics(self, data):
         # 통계 계산
@@ -350,28 +360,41 @@ class CustomRecorder(Sensorbase):
             _LOGGER.debug(f"old_state - {old_state}, new_state - {new_state}")
             #if (_is_valid_state(old_state) and old_state.state != new_state.state) or (len(self._attributes["data"]) <= 0 or self._state != new_state.state):
 
-            if (len(self._attributes["data"]) <= 0 or 
-                (self._source_entity_attr == None and self._state != new_state.state) or
-                (self._source_entity_attr != None and self._state != new_state.attributes.get(self._source_entity_attr))
+            data = self._attributes["data"]
+            if (len(data) <= 0 or 
+                (self._source_entity_attr == None and str(self._state) != str(new_state.state)) or
+                (self._source_entity_attr != None and str(self._state) != str(new_state.attributes.get(self._source_entity_attr)))
                 ):
                 if self._source_entity_attr != None:
                     self._state = new_state.attributes.get(self._source_entity_attr)
                 else:
                     self._state = new_state.state
+
                 args = {}
-                args[self._offset_unit] = int(self._offset)
+                offset_args = {}
+                args[self._record_period_unit] = int(self._record_period)
+                # offset 설정만큼 보정
+                offset_args[self._offset_unit] = int(self._offset)
+                #data = sorted(data.items())
+                # 기간 지난것들 체크
+                tmp = {}
+                for key in data.keys():
+                    if datetime.strptime(key, '%Y-%m-%d %H:%M:%S.%f') > datetime.now() - relativedelta(**args) - relativedelta(**offset_args) + timedelta(minutes=1):
+                        tmp[key] = data[key]
+                data = tmp.copy()
                 #_LOGGER.debug(f"offset unit : {self._offset_unit}, offset : {self._offset}")
-                now = datetime.now() + relativedelta(**args)
+                now = datetime.now() + relativedelta(**offset_args)
                 str_now = now.strftime('%Y-%m-%d %H:%M:%S.%f')
-                self._attributes["data"][str_now] = float(self._state) if isNumber(self._state) else self._state
+                data[str_now] = float(self._state) if isNumber(self._state) else self._state
                 _LOGGER.debug(f"self._state - {self._state}")
-                data = "[data]\n" + str_now + ',' + self._state + "\n"
+                d = "[data]\n" + str_now + ',' + str(self._state) + "\n"
                 #_LOGGER.debug(f"data - {data}")
                 fp = open(DATA_DIR + self._attributes["data file"], "a")
-                fp.write(data)
+                fp.write(d)
                 fp.close()
 
-                self.calc_statistics(self._attributes["data"])
+                self._attributes["data"] = data
+                self.calc_statistics(data)
 
             #_LOGGER.debug("call switch_entity_listener, old state : %s, new_state : %s",
             #          old_state, new_state.state)  
@@ -386,9 +409,14 @@ class CustomRecorder(Sensorbase):
         return True
 
     @property
+    def state(self):
+        return self._state
+
+    @property
     def unit_of_measurement(self):
-        """Return the unit_of_measurement of the device."""
+        """Return the unit of measurement."""
         return self._unit_of_measurement
+
     
     @property
     def icon(self) -> str | None:
@@ -403,12 +431,6 @@ class CustomRecorder(Sensorbase):
     def name(self):
         """Return the name of the sensor."""
         return self._name
-
-    @property
-    def state(self):
-        """Return the state of the sensor."""
-        # return self._state
-        return self._state
 
     # @property
     # def device_class(self) -> Optional[str]:
@@ -437,4 +459,4 @@ class CustomRecorder(Sensorbase):
 
 
 def _is_valid_state(state) -> bool:
-    return state and state.state != STATE_UNKNOWN and state.state != STATE_UNAVAILABLE
+    return state and state.state != STATE_UNKNOWN and state.state != STATE_UNAVAILABLE and state.state != None
