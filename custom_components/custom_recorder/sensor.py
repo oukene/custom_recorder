@@ -329,7 +329,14 @@ class CustomRecorder(Sensorbase):
         # 통계 계산
         if isNumber(self._state) and len(data) > 0:
             for key in STATISTICS_TYPE:
-                self._attributes[key] = STATISTICS_TYPE[key](list(data.values()))
+                if key == "quantile_25":
+                    self._attributes[key] = STATISTICS_TYPE[key](list(data.values()), 0.25)
+                elif key == "quantile_50":
+                    self._attributes[key] = STATISTICS_TYPE[key](list(data.values()), 0.5)
+                elif key == "quantile_75":
+                    self._attributes[key] = STATISTICS_TYPE[key](list(data.values()), 0.75)
+                else:
+                    self._attributes[key] = STATISTICS_TYPE[key](list(data.values()))
 
     def setup(self):
         self.hass.data[DOMAIN][self.entry_id]["listener"].append(async_track_state_change(
@@ -379,6 +386,7 @@ class CustomRecorder(Sensorbase):
                 # 기간 지난것들 체크
                 tmp = {}
                 for key in data.keys():
+                    # 여유시간 1분 추가
                     if datetime.strptime(key, '%Y-%m-%d %H:%M:%S.%f') > datetime.now() - relativedelta(**args) - relativedelta(**offset_args) + timedelta(minutes=1):
                         tmp[key] = data[key]
                 data = tmp.copy()

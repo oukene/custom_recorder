@@ -50,4 +50,7 @@ STATISTICS_TYPE = {
     "sum": np.sum,
     "std": np.std,
     "var": np.var,
+    "quantile_25": np.quantile,
+    "quantile_50": np.quantile,
+    "quantile_75": np.quantile,
 }
