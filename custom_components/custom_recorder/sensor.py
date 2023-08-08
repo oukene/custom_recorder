@@ -319,6 +319,7 @@ class CustomRecorder(Sensorbase):
         for key in STATISTICS_TYPE:
             self._attributes[key] = None
         self.calc_statistics(data)
+        self._attributes["last_update_time"] = None
         self._attributes["data"] = data
         self._icon = None
         self._record_period_unit = record_period_unit
@@ -411,7 +412,9 @@ class CustomRecorder(Sensorbase):
                         tmp[key] = data[key]
                 data = tmp.copy()
                 #_LOGGER.debug(f"offset unit : {self._offset_unit}, offset : {self._offset}")
-                now = datetime.now() + relativedelta(**offset_args)
+                now = datetime.now()
+                self._attributes["last_update_time"] = now
+                now = now + relativedelta(**offset_args)
                 str_now = now.strftime('%Y-%m-%d %H:%M:%S.%f')
                 data[str_now] = float(self._state) if isNumber(self._state) else self._state
                 _LOGGER.debug(f"self._state - {self._state}")
