@@ -288,25 +288,23 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 for e in self.data[CONF_ENTITIES]:
                     if e[CONF_NAME] + ".txt" not in file_list:
                         # 파일 생성
-                        f = open(DATA_DIR + e[CONF_NAME] + ".txt", "w")
-                        # 파일 형식에 맞게 데이터 셋팅                        
-                        f.write(FIELD_NAME)
-                        f.write(e[CONF_NAME] + "\n")
-                        f.write(FIELD_SOURCE_ENTITY)
-                        f.write(e[CONF_SOURCE_ENTITY] + "\n")
-                        f.write(FIELD_SOURCE_ENTITY_ATTR)
-                        f.write(e[CONF_SOURCE_ENTITY_ATTR] + "\n")
-                        f.write(FIELD_RECORD_PERIOD_UNIT)
-                        f.write(e[CONF_RECORD_PERIOD_UNIT] + "\n")
-                        f.write(FIELD_RECORD_PERIOD)
-                        f.write(str(e[CONF_RECORD_PERIOD]) + "\n")
-                        f.write(FIELD_OFFSET_UNIT)
-                        f.write(e[CONF_OFFSET_UNIT] + "\n")
-                        f.write(FIELD_OFFSET)
-                        f.write(str(e[CONF_OFFSET]) + "\n")
-
-                        f.close()
-                        _LOGGER.debug(f"file write end")
+                        with open(DATA_DIR + e[CONF_NAME] + ".txt", "w") as fp:
+                            # 파일 형식에 맞게 데이터 셋팅                        
+                            fp.write(FIELD_NAME)
+                            fp.write(e[CONF_NAME] + "\n")
+                            fp.write(FIELD_SOURCE_ENTITY)
+                            fp.write(e[CONF_SOURCE_ENTITY] + "\n")
+                            fp.write(FIELD_SOURCE_ENTITY_ATTR)
+                            fp.write(e[CONF_SOURCE_ENTITY_ATTR] + "\n")
+                            fp.write(FIELD_RECORD_PERIOD_UNIT)
+                            fp.write(e[CONF_RECORD_PERIOD_UNIT] + "\n")
+                            fp.write(FIELD_RECORD_PERIOD)
+                            fp.write(str(e[CONF_RECORD_PERIOD]) + "\n")
+                            fp.write(FIELD_OFFSET_UNIT)
+                            fp.write(e[CONF_OFFSET_UNIT] + "\n")
+                            fp.write(FIELD_OFFSET)
+                            fp.write(str(e[CONF_OFFSET]) + "\n")
+                            _LOGGER.debug(f"file write end")
 
                 return self.async_create_entry(title=NAME, data=self.data)
 

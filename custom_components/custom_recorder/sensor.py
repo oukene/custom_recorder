@@ -10,6 +10,7 @@ from homeassistant.const import (
     STATE_UNKNOWN, STATE_UNAVAILABLE, ATTR_UNIT_OF_MEASUREMENT, ATTR_ICON
 )
 
+import time
 import numpy
 import os
 import asyncio
@@ -49,6 +50,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     device = Device(NAME, config_entry)
 
     new_devices = []
+    tmp_devices = []
 
     # 지정된 디렉토리의 모든 파일을 읽는다
     if os.path.isdir(DATA_DIR) == False:
@@ -60,104 +62,103 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     for file in file_list:
         d = [None, None]
         _LOGGER.debug(f"filename - {file}")
-        f = open(DATA_DIR + file)
-        lines = f.readlines()
-        name = None
-        source_entity = None
-        source_entity_attr = None
-        record_period = None
-        data = {}
-        for idx, line in enumerate(lines):
-            isName = None
-            isSourceEntity = None
-            isRecordPeriod = None
-            isData = None
-            isName = line.find(FIELD_NAME)
-            isSourceEntity = line.find(FIELD_SOURCE_ENTITY)
-            isSourceEntityAttr = line.find(FIELD_SOURCE_ENTITY_ATTR)
-            isRecordPeriodUnit = line.find(FIELD_RECORD_PERIOD_UNIT)
-            isRecordPeriod = line.find(FIELD_RECORD_PERIOD)
-            isOffsetUnit = line.find(FIELD_OFFSET_UNIT)
-            isOffset = line.find(FIELD_OFFSET)
-            isData = line.find(FIELD_DATA)
-            # _LOGGER.debug(f"isName - {isName}, isOriginEntity - {isOriginEntity}, isRecordPeriod - {isRecordPeriod}")
-            if isName == 0:
-                name = lines[idx + 1].replace("\n", "")
-            if isSourceEntity == 0:
-                source_entity = lines[idx + 1].replace("\n", "")
-            if isSourceEntityAttr == 0:
-                source_entity_attr = lines[idx + 1].replace("\n", "")
-                if source_entity_attr == "None":
-                    source_entity_attr = None
-            if isRecordPeriodUnit == 0:
-                record_period_unit = lines[idx + 1].replace("\n", "")
-            if isRecordPeriod == 0:
-                record_period = lines[idx + 1].replace("\n", "")
-            if isOffsetUnit == 0:
-                offset_unit = lines[idx+1].replace("\n", "")
-            if isOffset == 0:
-                offset = lines[idx+1].replace("\n", "")
-            if isData == 0:
-                # 기록된 데이터를 모두 읽은은 후 종료
-                d = lines[idx+1].replace("\n", "")
-                d = d.split(",")
-                #if datetime(d[0]) < datetime.now() - timedelta(days=int(record_period)):
-                args = {}
-                offset_args = {}
-                args[record_period_unit] = int(record_period)
-                # offset 설정만큼 보정
-                offset_args[offset_unit] = int(offset)
-                if datetime.strptime(d[0], '%Y-%m-%d %H:%M:%S.%f') < datetime.now() - relativedelta(**args) - relativedelta(**offset_args):
-                    continue
-                #d[0] = d[0]
-                d[1] = float(d[1]) if isNumber(d[1]) else d[1]
-                #d[1] = d[1].replace('\n', '')
-                #_LOGGER.debug(f"d - {d[0]}, val - {d[1]}")
-                data[str(d[0])] = d[1]
+        with open(DATA_DIR + file) as fp:
+            lines = fp.readlines()
+            name = None
+            source_entity = None
+            source_entity_attr = None
+            record_period = None
+            data = {}
+            for idx, line in enumerate(lines):
+                isName = None
+                isSourceEntity = None
+                isRecordPeriod = None
+                isData = None
+                isName = line.find(FIELD_NAME)
+                isSourceEntity = line.find(FIELD_SOURCE_ENTITY)
+                isSourceEntityAttr = line.find(FIELD_SOURCE_ENTITY_ATTR)
+                isRecordPeriodUnit = line.find(FIELD_RECORD_PERIOD_UNIT)
+                isRecordPeriod = line.find(FIELD_RECORD_PERIOD)
+                isOffsetUnit = line.find(FIELD_OFFSET_UNIT)
+                isOffset = line.find(FIELD_OFFSET)
+                isData = line.find(FIELD_DATA)
+                # _LOGGER.debug(f"isName - {isName}, isOriginEntity - {isOriginEntity}, isRecordPeriod - {isRecordPeriod}")
+                if isName == 0:
+                    name = lines[idx + 1].replace("\n", "")
+                if isSourceEntity == 0:
+                    source_entity = lines[idx + 1].replace("\n", "")
+                if isSourceEntityAttr == 0:
+                    source_entity_attr = lines[idx + 1].replace("\n", "")
+                    if source_entity_attr == "None":
+                        source_entity_attr = None
+                if isRecordPeriodUnit == 0:
+                    record_period_unit = lines[idx + 1].replace("\n", "")
+                if isRecordPeriod == 0:
+                    record_period = lines[idx + 1].replace("\n", "")
+                if isOffsetUnit == 0:
+                    offset_unit = lines[idx+1].replace("\n", "")
+                if isOffset == 0:
+                    offset = lines[idx+1].replace("\n", "")
+                if isData == 0:
+                    # 기록된 데이터를 모두 읽은은 후 종료
+                    d = lines[idx+1].replace("\n", "")
+                    d = d.split(",")
+                    #if datetime(d[0]) < datetime.now() - timedelta(days=int(record_period)):
+                    args = {}
+                    offset_args = {}
+                    args[record_period_unit] = int(record_period)
+                    # offset 설정만큼 보정
+                    offset_args[offset_unit] = int(offset)
+                    if datetime.strptime(d[0], '%Y-%m-%d %H:%M:%S.%f') < datetime.now() - relativedelta(**args) - relativedelta(**offset_args):
+                        continue
+                    #d[0] = d[0]
+                    d[1] = float(d[1]) if isNumber(d[1]) else d[1]
+                    #d[1] = d[1].replace('\n', '')
+                    #_LOGGER.debug(f"d - {d[0]}, val - {d[1]}")
+                    data[str(d[0])] = d[1]
 
-        if source_entity != None and record_period != None and offset_unit != None and offset != None and record_period_unit != None:
-            #d = {'origin_entity': origin_entity,
-            #        'name': name, 'record_period': record_period}
-            #_LOGGER.debug(f"add entity - {d}")
-            new_devices.append(
-                CustomRecorder(
-                    hass,
-                    config_entry.entry_id,
-                    device,
-                    name,
-                    source_entity,
-                    source_entity_attr,
-                    record_period_unit,
-                    record_period,
-                    offset_unit,
-                    offset,
-                    data,
-                    file,
-                    d[1],
-                ))
-            data = sorted(data.items())
-            f.close()
-            f=open(DATA_DIR + file, "w")
-            f.write(FIELD_NAME)
-            f.write(str(name) + "\n")
-            f.write(FIELD_SOURCE_ENTITY)
-            f.write(source_entity + "\n")
-            f.write(FIELD_SOURCE_ENTITY_ATTR)
-            f.write(str(source_entity_attr) + "\n")
-            f.write(FIELD_RECORD_PERIOD_UNIT)
-            f.write(record_period_unit + "\n")
-            f.write(FIELD_RECORD_PERIOD)
-            f.write(record_period + "\n")
-            f.write(FIELD_OFFSET_UNIT)
-            f.write(offset_unit + "\n")
-            f.write(FIELD_OFFSET)
-            f.write(offset + "\n")
+            if source_entity != None and record_period != None and offset_unit != None and offset != None and record_period_unit != None:
+                #d = {'origin_entity': origin_entity,
+                #        'name': name, 'record_period': record_period}
+                #_LOGGER.debug(f"add entity - {d}")
 
-            for d in data:
-                f.write(FIELD_DATA)
-                f.write(d[0] + "," + str(d[1]) + "\n")
+                tmp_devices.append(
+                    (
+                        hass,
+                        config_entry.entry_id,
+                        device,
+                        name,
+                        source_entity,
+                        source_entity_attr,
+                        record_period_unit,
+                        record_period,
+                        offset_unit,
+                        offset,
+                        data,
+                        file,
+                        d[1],
+                    ))
+                data = sorted(data.items())
+                #f1.close()
+                with open(DATA_DIR + file, "w") as fp2:
+                    fp2.write(FIELD_NAME)
+                    fp2.write(str(name) + "\n")
+                    fp2.write(FIELD_SOURCE_ENTITY)
+                    fp2.write(source_entity + "\n")
+                    fp2.write(FIELD_SOURCE_ENTITY_ATTR)
+                    fp2.write(str(source_entity_attr) + "\n")
+                    fp2.write(FIELD_RECORD_PERIOD_UNIT)
+                    fp2.write(record_period_unit + "\n")
+                    fp2.write(FIELD_RECORD_PERIOD)
+                    fp2.write(record_period + "\n")
+                    fp2.write(FIELD_OFFSET_UNIT)
+                    fp2.write(offset_unit + "\n")
+                    fp2.write(FIELD_OFFSET)
+                    fp2.write(offset + "\n")
 
-        f.close()
+                    for d in data:
+                        fp2.write(FIELD_DATA)
+                        fp2.write(d[0] + "," + str(d[1]) + "\n")
 
     #if config_entry.options.get(CONF_ENTITIES) != None:
     #    for entity in config_entry.options.get(CONF_ENTITIES):
@@ -171,6 +172,23 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     #                entity[CONF_RECORD_PERIOD],
     #            )
                 #        )
+    for device in tmp_devices:
+        new_devices.append(
+            CustomRecorder(
+                device[0],
+                device[1],
+                device[2],
+                device[3],
+                device[4],
+                device[5],
+                device[6],
+                device[7],
+                device[8],
+                device[9],
+                device[10],
+                device[11],
+                device[12],
+            ))
     if new_devices:
         async_add_devices(new_devices)
 
@@ -344,6 +362,7 @@ class CustomRecorder(Sensorbase):
 
         
         state = self.hass.states.get(self._source_entity)
+        _LOGGER.debug("entity id : %s", self.entity_id)
         old_state = self.hass.states.get(self.entity_id)
         if _is_valid_state(state):
             self.entity_listener(self._source_entity, old_state, state)
@@ -368,6 +387,7 @@ class CustomRecorder(Sensorbase):
             #if (_is_valid_state(old_state) and old_state.state != new_state.state) or (len(self._attributes["data"]) <= 0 or self._state != new_state.state):
 
             data = self._attributes["data"]
+            _LOGGER.debug(f"data : " + str(data) + ", length : " + str(len(data)))
             if (len(data) <= 0 or 
                 (self._source_entity_attr == None and str(self._state) != str(new_state.state)) or
                 (self._source_entity_attr != None and str(self._state) != str(new_state.attributes.get(self._source_entity_attr)))
@@ -397,9 +417,8 @@ class CustomRecorder(Sensorbase):
                 _LOGGER.debug(f"self._state - {self._state}")
                 d = "[data]\n" + str_now + ',' + str(self._state) + "\n"
                 #_LOGGER.debug(f"data - {data}")
-                fp = open(DATA_DIR + self._attributes["data file"], "a")
-                fp.write(d)
-                fp.close()
+                with open(DATA_DIR + self._attributes["data file"], "a") as fp:
+                    fp.write(d)
 
                 self._attributes["data"] = data
                 self.calc_statistics(data)
