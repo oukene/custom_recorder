@@ -136,7 +136,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                         offset,
                         data,
                         file,
-                        d[1],
+                        [d[0], d[1]],
                     ))
                 data = sorted(data.items())
                 #f1.close()
@@ -305,7 +305,7 @@ class CustomRecorder(Sensorbase):
         self._name = "{}".format(entity_name)
         # self._name = "{} {}".format(device.device_id, SENSOR_TYPES[sensor_type][1])
         self._unit_of_measurement = None
-        self._state = last_data
+        self._state = last_data[1]
         self._offset_unit = offset_unit
         self._offset = offset
         self._attributes = {}
@@ -319,7 +319,7 @@ class CustomRecorder(Sensorbase):
         for key in STATISTICS_TYPE:
             self._attributes[key] = None
         self.calc_statistics(data)
-        self._attributes["last_update_time"] = None
+        self._attributes["last_update_time"] = last_data[0]
         self._attributes["data"] = data
         self._icon = None
         self._record_period_unit = record_period_unit
