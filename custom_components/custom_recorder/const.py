@@ -16,6 +16,9 @@ CONF_RECORD_PERIOD_UNIT = "record_period_unit"
 CONF_RECORD_PERIOD = "record_period"
 CONF_OFFSET_UNIT = "offset_unit"
 CONF_OFFSET = "offset"
+CONF_RECORD_LIMIT_COUNT = "record_limit_count"
+
+DEFAULT_LIMIT_COUNT = 50
 
 DIR_PATH = "custom_recorder/"
 DATA_PATH = "data/"
@@ -30,6 +33,7 @@ FIELD_RECORD_PERIOD = "[record_period]\n"
 FIELD_OFFSET_UNIT = "[offset_unit]\n"
 FIELD_OFFSET = "[offset]\n"
 FIELD_DATA = "[data]\n"
+FIELD_RECORD_LIMIT_COUNT = "[record_limit_count]\n"
 
 DATE_UNIT = [
     'years', 

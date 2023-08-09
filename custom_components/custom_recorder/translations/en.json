@@ -30,6 +30,7 @@
                     "record_period": "record save period",
                     "offset_unit": "record time offset unit",
                     "offset": "record time offset",
+                    "record_limit_count": "record limit count",
                     "add_another": "add more recorder"
                 }
             }

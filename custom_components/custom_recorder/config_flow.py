@@ -90,7 +90,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         for file in file_list:
             f = open(DATA_DIR + file)
             lines = f.readlines()
-
+            record_limit_count = DEFAULT_LIMIT_COUNT
             for idx, line in enumerate(lines):
                 #_LOGGER.debug(f"idx - {idx}, line = {line}")
                 isName = line.find(FIELD_NAME)
@@ -100,6 +100,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 isRecordPeriod = line.find(FIELD_RECORD_PERIOD)
                 isOffsetUnit = line.find(FIELD_OFFSET_UNIT)
                 isOffset = line.find(FIELD_OFFSET)
+                isRecordLimitCount = line.find(FIELD_RECORD_LIMIT_COUNT)
                 #_LOGGER.debug(f"isName - {isName}, isOriginEntity - {isOriginEntity}, isRecordPeriod - {isRecordPeriod}")
 
                 if isName == 0:
@@ -116,15 +117,19 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     offset_unit = lines[idx+1].replace("\n", "")
                 if isOffset == 0:
                     offset = lines[idx+1].replace("\n", "")
+                if isRecordLimitCount == 0:
+                    record_limit_count = lines[idx+1].replace("\n", "")
 
-            if source_entity != None and record_period != None and offset_unit != None and offset != None and record_period_unit != None:
+            if source_entity != None and record_period != None and offset_unit != None and offset != None and record_period_unit != None and record_limit_count != None:
                 d = {CONF_SOURCE_ENTITY: source_entity,
                      CONF_SOURCE_ENTITY_ATTR: source_entity_attr,
                      CONF_NAME: name, 
                      CONF_RECORD_PERIOD_UNIT: record_period_unit,
                      CONF_RECORD_PERIOD: record_period, 
                      CONF_OFFSET_UNIT: offset_unit, 
-                     CONF_OFFSET: offset}
+                     CONF_OFFSET: offset,
+                     CONF_RECORD_LIMIT_COUNT: record_limit_count
+                     }
                 self.data[CONF_ENTITIES].append(d)
             f.close()
 
@@ -184,7 +189,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                                         host[CONF_RECORD_PERIOD_UNIT],
                                         host[CONF_RECORD_PERIOD],
                                         host[CONF_OFFSET_UNIT],
-                                        host[CONF_OFFSET]
+                                        host[CONF_OFFSET],
+                                        host[CONF_RECORD_LIMIT_COUNT]
                     )] = e.entity_id
 
         if user_input is not None:
@@ -213,7 +219,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                                 CONF_RECORD_PERIOD_UNIT: key[3],
                                 CONF_RECORD_PERIOD: key[4],
                                 CONF_OFFSET_UNIT: key[5],
-                                CONF_OFFSET: key[6]
+                                CONF_OFFSET: key[6],
+                                CONF_RECORD_LIMIT_COUNT: key[7]
                             }
                         )
                         
@@ -267,7 +274,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         CONF_RECORD_PERIOD_UNIT: user_input[CONF_RECORD_PERIOD_UNIT],
                         CONF_RECORD_PERIOD: user_input[CONF_RECORD_PERIOD],
                         CONF_OFFSET_UNIT: user_input[CONF_OFFSET_UNIT],
-                        CONF_OFFSET: user_input[CONF_OFFSET]
+                        CONF_OFFSET: user_input[CONF_OFFSET],
+                        CONF_RECORD_LIMIT_COUNT: user_input[CONF_RECORD_LIMIT_COUNT]
                     }
                 )
 
@@ -304,6 +312,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                             fp.write(e[CONF_OFFSET_UNIT] + "\n")
                             fp.write(FIELD_OFFSET)
                             fp.write(str(e[CONF_OFFSET]) + "\n")
+                            fp.write(FIELD_RECORD_LIMIT_COUNT)
+                            fp.write(str(e[CONF_RECORD_LIMIT_COUNT]) + "\n")
                             _LOGGER.debug(f"file write end")
 
                 return self.async_create_entry(title=NAME, data=self.data)
@@ -319,6 +329,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         vol.Required(CONF_RECORD_PERIOD, default=1): int,
                         vol.Required(CONF_OFFSET_UNIT, default=DATE_UNIT[0]): vol.In(DATE_UNIT),
                         vol.Required(CONF_OFFSET, default=0): int,
+                        vol.Required(CONF_RECORD_LIMIT_COUNT, default=DEFAULT_LIMIT_COUNT): int,
                         vol.Optional(CONF_ADD_ANODHER): cv.boolean,
                     }
             ), errors=errors

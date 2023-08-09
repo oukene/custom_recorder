@@ -64,11 +64,13 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
         _LOGGER.debug(f"filename - {file}")
         with open(DATA_DIR + file) as fp:
             lines = fp.readlines()
+            _LOGGER.debug("lines : %s", lines)
             name = None
             source_entity = None
             source_entity_attr = None
             record_period = None
             data = {}
+            record_limit_count = DEFAULT_LIMIT_COUNT
             for idx, line in enumerate(lines):
                 isName = None
                 isSourceEntity = None
@@ -82,6 +84,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                 isOffsetUnit = line.find(FIELD_OFFSET_UNIT)
                 isOffset = line.find(FIELD_OFFSET)
                 isData = line.find(FIELD_DATA)
+                isRecordLimitCount = line.find(FIELD_RECORD_LIMIT_COUNT)
                 # _LOGGER.debug(f"isName - {isName}, isOriginEntity - {isOriginEntity}, isRecordPeriod - {isRecordPeriod}")
                 if isName == 0:
                     name = lines[idx + 1].replace("\n", "")
@@ -99,8 +102,10 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                     offset_unit = lines[idx+1].replace("\n", "")
                 if isOffset == 0:
                     offset = lines[idx+1].replace("\n", "")
+                if isRecordLimitCount == 0:
+                    record_limit_count = lines[idx+1].replace("\n", "")
                 if isData == 0:
-                    # 기록된 데이터를 모두 읽은은 후 종료
+                    # 기록된 데이터를 모두 읽은 후 종료
                     d = lines[idx+1].replace("\n", "")
                     d = d.split(",")
                     #if datetime(d[0]) < datetime.now() - timedelta(days=int(record_period)):
@@ -115,9 +120,23 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                     d[1] = float(d[1]) if isNumber(d[1]) else d[1]
                     #d[1] = d[1].replace('\n', '')
                     #_LOGGER.debug(f"d - {d[0]}, val - {d[1]}")
+                    _LOGGER.debug("데이터 추가 : " + str(d))
                     data[str(d[0])] = d[1]
 
-            if source_entity != None and record_period != None and offset_unit != None and offset != None and record_period_unit != None:
+            tmp = {}
+            # record limit count 체크
+            _LOGGER.debug("data size : %d", len(data))
+            for key in sorted(data.keys(), reverse=True):
+                _LOGGER.debug("len : %d, limitCount : %d", len(tmp), int(record_limit_count))
+                if len(tmp) <= int(record_limit_count) - 1:
+                    tmp[key] = data[key]
+                else:
+                    break
+
+            data = dict(sorted(tmp.items()))
+
+            _LOGGER.debug("데이터 사이즈 : %d", len(data))
+            if source_entity != None and record_period != None and offset_unit != None and offset != None and record_period_unit != None and record_limit_count != None:
                 #d = {'origin_entity': origin_entity,
                 #        'name': name, 'record_period': record_period}
                 #_LOGGER.debug(f"add entity - {d}")
@@ -134,11 +153,12 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                         record_period,
                         offset_unit,
                         offset,
+                        record_limit_count,
                         data,
                         file,
                         [d[0], d[1]],
                     ))
-                data = sorted(data.items())
+                #data = sorted(data.items())
                 #f1.close()
                 with open(DATA_DIR + file, "w") as fp2:
                     fp2.write(FIELD_NAME)
@@ -155,10 +175,12 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                     fp2.write(offset_unit + "\n")
                     fp2.write(FIELD_OFFSET)
                     fp2.write(offset + "\n")
+                    fp2.write(FIELD_RECORD_LIMIT_COUNT)
+                    fp2.write(str(record_limit_count) + "\n")
 
-                    for d in data:
+                    for d in data.keys():
                         fp2.write(FIELD_DATA)
-                        fp2.write(d[0] + "," + str(d[1]) + "\n")
+                        fp2.write(d + "," + str(data[d]) + "\n")
 
     #if config_entry.options.get(CONF_ENTITIES) != None:
     #    for entity in config_entry.options.get(CONF_ENTITIES):
@@ -188,6 +210,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                 device[10],
                 device[11],
                 device[12],
+                device[13],
             ))
     if new_devices:
         async_add_devices(new_devices)
@@ -289,7 +312,7 @@ class Sensorbase(SensorEntity):
 class CustomRecorder(Sensorbase):
     """Representation of a Thermal Comfort Sensor."""
 
-    def __init__(self, hass, entry_id, device, entity_name, source_entity, source_entity_attr, record_period_unit, record_period, offset_unit, offset, data, file, last_data):
+    def __init__(self, hass, entry_id, device, entity_name, source_entity, source_entity_attr, record_period_unit, record_period, offset_unit, offset, record_limit_count, data, file, last_data):
         """Initialize the sensor."""
         super().__init__(device)
 
@@ -309,15 +332,16 @@ class CustomRecorder(Sensorbase):
         self._offset_unit = offset_unit
         self._offset = offset
         self._attributes = {}
-        self._attributes["source entity id"] = source_entity
-        self._attributes["source entity attribute"] = source_entity_attr
-        self._attributes["record period unit"] = record_period_unit
-        self._attributes["record period"] = record_period
-        self._attributes["offset unit"] = offset_unit
-        self._attributes["offset"] = offset
-        self._attributes["data file"] = file
-        for key in STATISTICS_TYPE:
-            self._attributes[key] = None
+        self._attributes[CONF_SOURCE_ENTITY] = source_entity
+        self._attributes[CONF_SOURCE_ENTITY_ATTR] = source_entity_attr
+        self._attributes[CONF_RECORD_PERIOD_UNIT] = record_period_unit
+        self._attributes[CONF_RECORD_PERIOD] = record_period
+        self._attributes[CONF_OFFSET_UNIT] = offset_unit
+        self._attributes[CONF_OFFSET] = offset
+        self._attributes[CONF_RECORD_LIMIT_COUNT] = record_limit_count
+        self._attributes["data_file"] = file
+        #for key in STATISTICS_TYPE:
+        #    self._attributes[key] = None
         self.calc_statistics(data)
         self._attributes["last_update_time"] = last_data[0]
         self._attributes["data"] = data
@@ -387,7 +411,7 @@ class CustomRecorder(Sensorbase):
             _LOGGER.debug(f"old_state - {old_state}, new_state - {new_state}")
             #if (_is_valid_state(old_state) and old_state.state != new_state.state) or (len(self._attributes["data"]) <= 0 or self._state != new_state.state):
 
-            data = self._attributes["data"]
+            data = dict(sorted(self._attributes["data"].items(), reverse=True))
             _LOGGER.debug(f"data : " + str(data) + ", length : " + str(len(data)))
             if (len(data) <= 0 or 
                 (self._source_entity_attr == None and str(self._state) != str(new_state.state)) or
@@ -405,12 +429,17 @@ class CustomRecorder(Sensorbase):
                 offset_args[self._offset_unit] = int(self._offset)
                 #data = sorted(data.items())
                 # 기간 지난것들 체크
+
                 tmp = {}
                 for key in data.keys():
                     # 여유시간 1분 추가
                     if datetime.strptime(key, '%Y-%m-%d %H:%M:%S.%f') > datetime.now() - relativedelta(**args) - relativedelta(**offset_args) + timedelta(minutes=1):
-                        tmp[key] = data[key]
-                data = tmp.copy()
+                        if len(tmp) < int(self._attributes[CONF_RECORD_LIMIT_COUNT]) - 1:
+                            tmp[key] = data[key]
+                        else:
+                            break
+                
+                data = dict(sorted(tmp.items()))
                 #_LOGGER.debug(f"offset unit : {self._offset_unit}, offset : {self._offset}")
                 now = datetime.now()
                 self._attributes["last_update_time"] = now
@@ -420,7 +449,7 @@ class CustomRecorder(Sensorbase):
                 _LOGGER.debug(f"self._state - {self._state}")
                 d = "[data]\n" + str_now + ',' + str(self._state) + "\n"
                 #_LOGGER.debug(f"data - {data}")
-                with open(DATA_DIR + self._attributes["data file"], "a") as fp:
+                with open(DATA_DIR + self._attributes["data_file"], "a") as fp:
                     fp.write(d)
 
                 self._attributes["data"] = data
