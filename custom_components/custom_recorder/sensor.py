@@ -430,18 +430,16 @@ class CustomRecorder(Sensorbase):
                 offset_args[self._offset_unit] = int(self._offset)
                 #data = sorted(data.items())
                 # 기간 지난것들 체크
-
-                if int(self._attributes[CONF_RECORD_LIMIT_COUNT]) != 0:
-                    tmp = {}
-                    for key in data.keys():
-                        # 여유시간 1분 추가
-                        if datetime.strptime(key, '%Y-%m-%d %H:%M:%S.%f') > datetime.now() - relativedelta(**args) - relativedelta(**offset_args) + timedelta(minutes=1):
-                            if len(tmp) < int(self._attributes[CONF_RECORD_LIMIT_COUNT]) - 1:
-                                tmp[key] = data[key]
-                            else:
-                                break
-                
-                    data = dict(sorted(tmp.items()))
+                tmp = {}
+                for key in data.keys():
+                    # 여유시간 1분 추가
+                    if datetime.strptime(key, '%Y-%m-%d %H:%M:%S.%f') > datetime.now() - relativedelta(**args) - relativedelta(**offset_args) + timedelta(minutes=1):
+                        if int(self._attributes[CONF_RECORD_LIMIT_COUNT]) != 0 and len(tmp) < int(self._attributes[CONF_RECORD_LIMIT_COUNT]) - 1:
+                            tmp[key] = data[key]
+                        else:
+                            break
+            
+                data = dict(sorted(tmp.items()))
                 #_LOGGER.debug(f"offset unit : {self._offset_unit}, offset : {self._offset}")
                 now = datetime.now()
                 self._attributes["last_update_time"] = now
