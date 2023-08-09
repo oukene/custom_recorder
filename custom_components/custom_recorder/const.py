@@ -18,7 +18,7 @@ CONF_OFFSET_UNIT = "offset_unit"
 CONF_OFFSET = "offset"
 CONF_RECORD_LIMIT_COUNT = "record_limit_count"
 
-DEFAULT_LIMIT_COUNT = 50
+DEFAULT_LIMIT_COUNT = 0
 
 DIR_PATH = "custom_recorder/"
 DATA_PATH = "data/"

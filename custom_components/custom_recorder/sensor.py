@@ -125,15 +125,16 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
 
             tmp = {}
             # record limit count 체크
-            _LOGGER.debug("data size : %d", len(data))
-            for key in sorted(data.keys(), reverse=True):
-                _LOGGER.debug("len : %d, limitCount : %d", len(tmp), int(record_limit_count))
-                if len(tmp) <= int(record_limit_count) - 1:
-                    tmp[key] = data[key]
-                else:
-                    break
+            if int(record_limit_count) != 0:
+                _LOGGER.debug("data size : %d", len(data))
+                for key in sorted(data.keys(), reverse=True):
+                    _LOGGER.debug("len : %d, limitCount : %d", len(tmp), int(record_limit_count))
+                    if len(tmp) <= int(record_limit_count) - 1:
+                        tmp[key] = data[key]
+                    else:
+                        break
 
-            data = dict(sorted(tmp.items()))
+                data = dict(sorted(tmp.items()))
 
             _LOGGER.debug("데이터 사이즈 : %d", len(data))
             if source_entity != None and record_period != None and offset_unit != None and offset != None and record_period_unit != None and record_limit_count != None:
@@ -430,16 +431,17 @@ class CustomRecorder(Sensorbase):
                 #data = sorted(data.items())
                 # 기간 지난것들 체크
 
-                tmp = {}
-                for key in data.keys():
-                    # 여유시간 1분 추가
-                    if datetime.strptime(key, '%Y-%m-%d %H:%M:%S.%f') > datetime.now() - relativedelta(**args) - relativedelta(**offset_args) + timedelta(minutes=1):
-                        if len(tmp) < int(self._attributes[CONF_RECORD_LIMIT_COUNT]) - 1:
-                            tmp[key] = data[key]
-                        else:
-                            break
+                if int(self._attributes[CONF_RECORD_LIMIT_COUNT]) != 0:
+                    tmp = {}
+                    for key in data.keys():
+                        # 여유시간 1분 추가
+                        if datetime.strptime(key, '%Y-%m-%d %H:%M:%S.%f') > datetime.now() - relativedelta(**args) - relativedelta(**offset_args) + timedelta(minutes=1):
+                            if len(tmp) < int(self._attributes[CONF_RECORD_LIMIT_COUNT]) - 1:
+                                tmp[key] = data[key]
+                            else:
+                                break
                 
-                data = dict(sorted(tmp.items()))
+                    data = dict(sorted(tmp.items()))
                 #_LOGGER.debug(f"offset unit : {self._offset_unit}, offset : {self._offset}")
                 now = datetime.now()
                 self._attributes["last_update_time"] = now
