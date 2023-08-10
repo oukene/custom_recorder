@@ -6,7 +6,9 @@
                 "description": "\uc124\uce58\ud558\uc2dc\uaca0\uc2b5\ub2c8\uae4c\u003f"
             },
             "user": {
-                "data": {},
+                "data": {
+                    "device_name": "\uc0dd\uc131\ud560\u0020\uae30\uae30\uc758\u0020\uc774\ub984\uc744\u0020\uc785\ub825\ud558\uc138\uc694"
+                },
                 "description": "\ud655\uc778\uc744\u0020\ub204\ub974\uba74\u0020\uc124\uce58\ub429\ub2c8\ub2e4"
             }
         }

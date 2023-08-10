@@ -6,7 +6,9 @@
                 "description": "Do you want to set up?"
             },
             "user": {
-                "data": {},
+                "data": {
+                    "device_name": "Enter the name of the device to be created"
+                },
                 "description": "Click OK to add intergration"
             }
         }

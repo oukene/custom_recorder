@@ -59,7 +59,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user", data_schema=vol.Schema(
                 {
-                    # vol.Required(CONF_ADD_GROUP_DEVICE): cv.boolean
+                    vol.Required(CONF_DEVICE_NAME, default=NAME): cv.string
                 }), errors=errors
         )
 
