@@ -2,10 +2,11 @@
 import asyncio
 import logging
 
+import os
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN
+from .const import *
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -67,6 +68,13 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
             ]
         )
     )
+
+    data_dir = DATA_DIR + entry.entry_id
+    if os.path.isdir(data_dir):
+        file_list = os.listdir(data_dir)
+        if len(file_list) <= 0:
+            _LOGGER.debug("remove dir : %s", data_dir)
+            os.removedirs(data_dir)
 
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)

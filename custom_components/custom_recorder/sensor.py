@@ -7,7 +7,7 @@
 # battery), the unit_of_measurement should match what's expected.
 import logging
 from homeassistant.const import (
-    STATE_UNKNOWN, STATE_UNAVAILABLE, ATTR_UNIT_OF_MEASUREMENT, ATTR_ICON
+    STATE_UNKNOWN, STATE_UNAVAILABLE, ATTR_UNIT_OF_MEASUREMENT, ATTR_ICON, ATTR_ENTITY_PICTURE
 )
 
 import time
@@ -47,22 +47,24 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
 
     hass.data[DOMAIN][config_entry.entry_id]["listener"] = []
     
-    device = Device(NAME, config_entry)
+    device = Device(config_entry.data.get(CONF_DEVICE_NAME), config_entry)
 
     new_devices = []
     tmp_devices = []
 
+    data_dir = DATA_DIR + config_entry.entry_id + "/"
+
     # 지정된 디렉토리의 모든 파일을 읽는다
-    if os.path.isdir(DATA_DIR) == False:
-        os.makedirs(DATA_DIR)
+    if os.path.isdir(data_dir) == False:
+        os.makedirs(data_dir)
 
     
     # 디렉토리에 있는 목록으로 config 대체
-    file_list = os.listdir(DATA_DIR)
+    file_list = os.listdir(data_dir)
     for file in file_list:
         d = [None, None]
         _LOGGER.debug(f"filename - {file}")
-        with open(DATA_DIR + file) as fp:
+        with open(data_dir + file) as fp:
             lines = fp.readlines()
             _LOGGER.debug("lines : %s", lines)
             name = None
@@ -329,10 +331,12 @@ class CustomRecorder(Sensorbase):
         self._name = "{}".format(entity_name)
         # self._name = "{} {}".format(device.device_id, SENSOR_TYPES[sensor_type][1])
         self._unit_of_measurement = None
+        _LOGGER.debug("last_data : " + str(last_data[1]))
         self._state = last_data[1]
         self._offset_unit = offset_unit
         self._offset = offset
         self._attributes = {}
+        self._entity_picture = None
         self._attributes[CONF_SOURCE_ENTITY] = source_entity
         self._attributes[CONF_SOURCE_ENTITY_ATTR] = source_entity_attr
         self._attributes[CONF_RECORD_PERIOD_UNIT] = record_period_unit
@@ -404,6 +408,8 @@ class CustomRecorder(Sensorbase):
                 ATTR_UNIT_OF_MEASUREMENT)
             self._icon = new_state.attributes.get(
                 ATTR_ICON)
+            self._entity_picture = new_state.attributes.get(
+                ATTR_ENTITY_PICTURE)
             
             _LOGGER.debug(f"source entity attr - {self._source_entity_attr}")
 
@@ -414,32 +420,39 @@ class CustomRecorder(Sensorbase):
 
             data = dict(sorted(self._attributes["data"].items(), reverse=True))
             _LOGGER.debug(f"data : " + str(data) + ", length : " + str(len(data)))
+            # 기간 지난것들 체크
+            args = {}
+            offset_args = {}
+            args[self._record_period_unit] = int(self._record_period)
+            # offset 설정만큼 보정
+            offset_args[self._offset_unit] = int(self._offset)
+            #data = sorted(data.items())
+            tmp = {}
+            for key in data.keys():
+                # 여유시간 1분 추가
+                if datetime.strptime(key, '%Y-%m-%d %H:%M:%S.%f') > datetime.now() - relativedelta(**args) - relativedelta(**offset_args) + timedelta(minutes=1):
+                    if (
+                        (int(self._attributes[CONF_RECORD_LIMIT_COUNT]) != 0 and len(tmp) < int(self._attributes[CONF_RECORD_LIMIT_COUNT]) - 1)
+                        or (int(self._attributes[CONF_RECORD_LIMIT_COUNT]) == 0)
+                        ):
+                        tmp[key] = data[key]
+                    else:
+                        break
+            _LOGGER.debug("self._state : %f, new_state : %f", float(self._state), float(new_state.state))
+            _LOGGER.debug("self._state : %s, new_state : %s", str(self._state), str(new_state.state))
+            data = dict(sorted(tmp.items()))
             if (len(data) <= 0 or 
-                (self._source_entity_attr == None and str(self._state) != str(new_state.state)) or
-                (self._source_entity_attr != None and str(self._state) != str(new_state.attributes.get(self._source_entity_attr)))
+                    (isNumber(self._state) == False and self._source_entity_attr == None and str(self._state) != str(new_state.state)) or
+                    (isNumber(self._state) == False and self._source_entity_attr != None and str(self._state) != str(new_state.attributes.get(self._source_entity_attr))) or
+                    (isNumber(self._state) == True and self._source_entity_attr == None and float(self._state) != float(new_state.state)) or
+                    (isNumber(self._state) == True and self._source_entity_attr != None and float(self._state) != float(new_state.attributes.get(self._source_entity_attr)))
                 ):
                 if self._source_entity_attr != None:
                     self._state = new_state.attributes.get(self._source_entity_attr)
                 else:
                     self._state = new_state.state
-
-                args = {}
-                offset_args = {}
-                args[self._record_period_unit] = int(self._record_period)
-                # offset 설정만큼 보정
-                offset_args[self._offset_unit] = int(self._offset)
-                #data = sorted(data.items())
-                # 기간 지난것들 체크
-                tmp = {}
-                for key in data.keys():
-                    # 여유시간 1분 추가
-                    if datetime.strptime(key, '%Y-%m-%d %H:%M:%S.%f') > datetime.now() - relativedelta(**args) - relativedelta(**offset_args) + timedelta(minutes=1):
-                        if int(self._attributes[CONF_RECORD_LIMIT_COUNT]) != 0 and len(tmp) < int(self._attributes[CONF_RECORD_LIMIT_COUNT]) - 1:
-                            tmp[key] = data[key]
-                        else:
-                            break
             
-                data = dict(sorted(tmp.items()))
+                
                 #_LOGGER.debug(f"offset unit : {self._offset_unit}, offset : {self._offset}")
                 now = datetime.now()
                 self._attributes["last_update_time"] = now
@@ -449,7 +462,7 @@ class CustomRecorder(Sensorbase):
                 _LOGGER.debug(f"self._state - {self._state}")
                 d = "[data]\n" + str_now + ',' + str(self._state) + "\n"
                 #_LOGGER.debug(f"data - {data}")
-                with open(DATA_DIR + self._attributes["data_file"], "a") as fp:
+                with open(DATA_DIR + self.entry_id + "/" + self._attributes["data_file"], "a") as fp:
                     fp.write(d)
 
                 self._attributes["data"] = data
@@ -466,6 +479,13 @@ class CustomRecorder(Sensorbase):
     @property
     def has_entity_name(self) -> bool:
         return True
+
+    @property
+    def entity_picture(self):
+        try:
+            return self._entity_picture
+        except:
+            return None
 
     @property
     def state(self):
