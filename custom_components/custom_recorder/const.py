@@ -17,6 +17,7 @@ CONF_RECORD_PERIOD = "record_period"
 CONF_OFFSET_UNIT = "offset_unit"
 CONF_OFFSET = "offset"
 CONF_RECORD_LIMIT_COUNT = "record_limit_count"
+CONF_DATA_DIR = "data_dir"
 
 DEFAULT_LIMIT_COUNT = 0
 

@@ -75,7 +75,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     """Handles options flow for the component."""
 
     def __init__(self, config_entry):
-        data_dir = DATA_DIR + config_entry.entry_id + "/"
+        data_dir = DATA_DIR + config_entry.data.get(CONF_DEVICE_NAME) + "_" + config_entry.entry_id + "/"
+        _LOGGER.debug("data_dir : %s", data_dir)
         if os.path.isdir(data_dir) == False:
             os.makedirs(data_dir)
 
@@ -90,6 +91,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
         self.config_entry = config_entry
         self.data = {}
+        self.data[CONF_DATA_DIR] = data_dir
         self.data[CONF_ENTITIES] = []
         for file in file_list:
             f = open(data_dir + file)
@@ -231,7 +233,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 for key in remove_entities:
                     _LOGGER.debug(f"remove entity : {key}, size - {remove_entities}")
                     # 여기에서 파일 삭제
-                    data_dir = DATA_DIR + self.config_entry.entry_id + "/"
+                    data_dir = self.data.get(CONF_DATA_DIR)
                     os.remove(data_dir + remove_entities[key] + ".txt")
                     file_list = os.listdir(data_dir)
                     _LOGGER.debug("file_list size : %d", len(file_list))
@@ -302,7 +304,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 self.data["modifydatetime"] = datetime.now()
 
                 # 여기에서 파일 생성, 존재하지 않는 파일들은 생성해 줌
-                data_dir = DATA_DIR + self.config_entry.entry_id + "/"
+                data_dir = self.data.get(CONF_DATA_DIR)
                 if os.path.isdir(data_dir) == False:
                     os.makedirs(data_dir)
                 file_list = os.listdir(data_dir)

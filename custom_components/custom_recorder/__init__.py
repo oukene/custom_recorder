@@ -69,7 +69,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
         )
     )
 
-    data_dir = DATA_DIR + entry.entry_id
+    data_dir = entry.options.get(CONF_DATA_DIR)
     if os.path.isdir(data_dir):
         file_list = os.listdir(data_dir)
         if len(file_list) <= 0:

@@ -52,7 +52,9 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     new_devices = []
     tmp_devices = []
 
-    data_dir = DATA_DIR + config_entry.entry_id + "/"
+    data_dir = config_entry.options.get(CONF_DATA_DIR)
+    if data_dir == None:
+        data_dir = DATA_DIR + config_entry.data.get(CONF_DEVICE_NAME) + "_" + config_entry.entry_id + "/"
 
     # 지정된 디렉토리의 모든 파일을 읽는다
     if os.path.isdir(data_dir) == False:
@@ -160,6 +162,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                         data,
                         file,
                         [d[0], d[1]],
+                        data_dir,
                     ))
                 #data = sorted(data.items())
                 #f1.close()
@@ -214,6 +217,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                 device[11],
                 device[12],
                 device[13],
+                device[14],
             ))
     if new_devices:
         async_add_devices(new_devices)
@@ -315,12 +319,13 @@ class Sensorbase(SensorEntity):
 class CustomRecorder(Sensorbase):
     """Representation of a Thermal Comfort Sensor."""
 
-    def __init__(self, hass, entry_id, device, entity_name, source_entity, source_entity_attr, record_period_unit, record_period, offset_unit, offset, record_limit_count, data, file, last_data):
+    def __init__(self, hass, entry_id, device, entity_name, source_entity, source_entity_attr, record_period_unit, record_period, offset_unit, offset, record_limit_count, data, file, last_data, data_dir):
         """Initialize the sensor."""
         super().__init__(device)
 
         self.hass = hass
         self.entry_id = entry_id
+        self._data_dir = data_dir
         self._source_entity = source_entity
         self._source_entity_attr = source_entity_attr
         _LOGGER.debug(
@@ -461,7 +466,7 @@ class CustomRecorder(Sensorbase):
                 _LOGGER.debug(f"self._state - {self._state}")
                 d = "[data]\n" + str_now + ',' + str(self._state) + "\n"
                 #_LOGGER.debug(f"data - {data}")
-                with open(DATA_DIR + self.entry_id + "/" + self._attributes["data_file"], "a") as fp:
+                with open(self._data_dir + self._attributes["data_file"], "a") as fp:
                     fp.write(d)
 
                 self._attributes["data"] = data
