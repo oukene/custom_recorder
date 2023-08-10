@@ -75,7 +75,13 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     """Handles options flow for the component."""
 
     def __init__(self, config_entry):
-        data_dir = DATA_DIR + config_entry.data.get(CONF_DEVICE_NAME) + "_" + config_entry.entry_id + "/"
+        self.config_entry = config_entry
+        self.data = {}
+        self.data[CONF_DEVICE_NAME] = config_entry.data.get(CONF_DEVICE_NAME)
+        data_dir = DATA_DIR + self.data[CONF_DEVICE_NAME] + "_" + config_entry.entry_id + "/"
+        self.data[CONF_DATA_DIR] = data_dir
+        self.data[CONF_ENTITIES] = []
+
         _LOGGER.debug("data_dir : %s", data_dir)
         if os.path.isdir(data_dir) == False:
             os.makedirs(data_dir)
@@ -88,11 +94,6 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         if len(file_list) <= 0:
             os.removedirs(data_dir)
 
-
-        self.config_entry = config_entry
-        self.data = {}
-        self.data[CONF_DATA_DIR] = data_dir
-        self.data[CONF_ENTITIES] = []
         for file in file_list:
             f = open(data_dir + file)
             lines = f.readlines()
@@ -255,7 +256,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
                 # User is done adding repos, create the config entry.
                 self.data["modifydatetime"] = datetime.now()
-                return self.async_create_entry(title=NAME, data=self.data)
+                return self.async_create_entry(title=self.data[CONF_DEVICE_NAME], data=self.data)
 
         options_schema = vol.Schema(
             {
@@ -331,7 +332,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                             fp.write(str(e[CONF_RECORD_LIMIT_COUNT]) + "\n")
                             _LOGGER.debug(f"file write end")
 
-                return self.async_create_entry(title=NAME, data=self.data)
+                return self.async_create_entry(title=self.data[CONF_DEVICE_NAME], data=self.data)
 
         return self.async_show_form(
             step_id="entity",
