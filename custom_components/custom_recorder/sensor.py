@@ -438,7 +438,6 @@ class CustomRecorder(Sensorbase):
                         tmp[key] = data[key]
                     else:
                         break
-            _LOGGER.debug("self._state : %f, new_state : %f", float(self._state), float(new_state.state))
             _LOGGER.debug("self._state : %s, new_state : %s", str(self._state), str(new_state.state))
             data = dict(sorted(tmp.items()))
             if (len(data) <= 0 or 
