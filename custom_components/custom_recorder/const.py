@@ -4,7 +4,7 @@ import numpy as np
 # name for the integration.
 DOMAIN = "custom_recorder"
 NAME = "Custom Recorder"
-VERSION = "1.0.8"
+VERSION = "1.1.0"
 
 CONF_DEVICE_NAME = "device_name"
 CONF_SOURCE_ENTITY = "source_entity"
@@ -17,6 +17,7 @@ CONF_RECORD_PERIOD = "record_period"
 CONF_OFFSET_UNIT = "offset_unit"
 CONF_OFFSET = "offset"
 CONF_RECORD_LIMIT_COUNT = "record_limit_count"
+CONF_DATA_DIR = "data_dir"
 
 DEFAULT_LIMIT_COUNT = 0
 
