@@ -50,16 +50,17 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             #    return self.async_create_entry(title=user_input[CONF_AREA_NAME], data=user_input)
             # else:
             self.data = user_input
+            #self.data[CONF_NAME] = NAME
             #self.data[CONF_SWITCHES] = []
             # self.devices = await get_available_device()
             # return await self.async_step_hosts()
-            return self.async_create_entry(title=NAME, data=self.data)
+            return self.async_create_entry(title=user_input[CONF_DEVICE_NAME], data=self.data)
 
         # If there is no user input or there were errors, show the form again, including any errors that were found with the input.
         return self.async_show_form(
             step_id="user", data_schema=vol.Schema(
                 {
-                    # vol.Required(CONF_ADD_GROUP_DEVICE): cv.boolean
+                    vol.Required(CONF_DEVICE_NAME): cv.string
                 }), errors=errors
         )
 
@@ -74,21 +75,26 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     """Handles options flow for the component."""
 
     def __init__(self, config_entry):
-
-        if os.path.isdir(DATA_DIR) == False:
-            os.makedirs(DATA_DIR)
+        data_dir = DATA_DIR + config_entry.data.get(CONF_DEVICE_NAME) + "_" + config_entry.entry_id + "/"
+        _LOGGER.debug("data_dir : %s", data_dir)
+        if os.path.isdir(data_dir) == False:
+            os.makedirs(data_dir)
 
         _LOGGER.debug("call init")
         _LOGGER.debug(f"options - {config_entry.options}")
+        _LOGGER.debug("config entry_id : " + config_entry.entry_id)
         # 디렉토리에 있는 목록으로 config 대체
-        file_list = os.listdir(DATA_DIR)
+        file_list = os.listdir(data_dir)
+        if len(file_list) <= 0:
+            os.removedirs(data_dir)
 
 
         self.config_entry = config_entry
         self.data = {}
+        self.data[CONF_DATA_DIR] = data_dir
         self.data[CONF_ENTITIES] = []
         for file in file_list:
-            f = open(DATA_DIR + file)
+            f = open(data_dir + file)
             lines = f.readlines()
             record_limit_count = DEFAULT_LIMIT_COUNT
             for idx, line in enumerate(lines):
@@ -227,7 +233,13 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 for key in remove_entities:
                     _LOGGER.debug(f"remove entity : {key}, size - {remove_entities}")
                     # 여기에서 파일 삭제
-                    os.remove(DATA_DIR + remove_entities[key] + ".txt")
+                    data_dir = self.data.get(CONF_DATA_DIR)
+                    os.remove(data_dir + remove_entities[key] + ".txt")
+                    file_list = os.listdir(data_dir)
+                    _LOGGER.debug("file_list size : %d", len(file_list))
+                    #if len(file_list) <= 0:
+                    #    _LOGGER.debug("remove dir : %s", data_dir)
+                    #    os.removedirs(data_dir)
 
                     entity_registry.async_remove(key)
 
@@ -292,11 +304,14 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 self.data["modifydatetime"] = datetime.now()
 
                 # 여기에서 파일 생성, 존재하지 않는 파일들은 생성해 줌
-                file_list = os.listdir(DATA_DIR)
+                data_dir = self.data.get(CONF_DATA_DIR)
+                if os.path.isdir(data_dir) == False:
+                    os.makedirs(data_dir)
+                file_list = os.listdir(data_dir)
                 for e in self.data[CONF_ENTITIES]:
                     if e[CONF_NAME] + ".txt" not in file_list:
                         # 파일 생성
-                        with open(DATA_DIR + e[CONF_NAME] + ".txt", "w") as fp:
+                        with open(data_dir + e[CONF_NAME] + ".txt", "w") as fp:
                             # 파일 형식에 맞게 데이터 셋팅                        
                             fp.write(FIELD_NAME)
                             fp.write(e[CONF_NAME] + "\n")
