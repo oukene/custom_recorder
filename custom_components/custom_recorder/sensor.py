@@ -68,7 +68,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
         _LOGGER.debug(f"filename - {file}")
         with open(data_dir + file) as fp:
             lines = fp.readlines()
-            _LOGGER.debug("lines : %s", lines)
+            #_LOGGER.debug("lines : %s", lines)
             name = None
             source_entity = None
             source_entity_attr = None
@@ -166,7 +166,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                     ))
                 #data = sorted(data.items())
                 #f1.close()
-                with open(DATA_DIR + file, "w") as fp2:
+                with open(data_dir + file, "w") as fp2:
                     fp2.write(FIELD_NAME)
                     fp2.write(str(name) + "\n")
                     fp2.write(FIELD_SOURCE_ENTITY)
