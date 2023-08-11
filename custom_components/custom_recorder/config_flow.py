@@ -91,8 +91,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         _LOGGER.debug("config entry_id : " + config_entry.entry_id)
         # 디렉토리에 있는 목록으로 config 대체
         file_list = os.listdir(data_dir)
-        if len(file_list) <= 0:
-            os.removedirs(data_dir)
+        #if len(file_list) <= 0:
+        #    os.removedirs(data_dir)
 
         for file in file_list:
             f = open(data_dir + file)
