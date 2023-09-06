@@ -12,7 +12,7 @@ import homeassistant.helpers.entity_registry
 
 from homeassistant.helpers.device_registry import (
     async_get,
-    async_entries_for_config_entry
+    async_entries_for_config_entry,
 )
 
 from .const import *
@@ -98,6 +98,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             f = open(data_dir + file)
             lines = f.readlines()
             record_limit_count = DEFAULT_LIMIT_COUNT
+            move_source_entity_device = False
             for idx, line in enumerate(lines):
                 #_LOGGER.debug(f"idx - {idx}, line = {line}")
                 isName = line.find(FIELD_NAME)
@@ -108,6 +109,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 isOffsetUnit = line.find(FIELD_OFFSET_UNIT)
                 isOffset = line.find(FIELD_OFFSET)
                 isRecordLimitCount = line.find(FIELD_RECORD_LIMIT_COUNT)
+                isMoveSourceEntityDevice = line.find(FIELD_MOVE_SOURCE_ENTITY_DEVICE)
                 #_LOGGER.debug(f"isName - {isName}, isOriginEntity - {isOriginEntity}, isRecordPeriod - {isRecordPeriod}")
 
                 if isName == 0:
@@ -126,8 +128,11 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     offset = lines[idx+1].replace("\n", "")
                 if isRecordLimitCount == 0:
                     record_limit_count = lines[idx+1].replace("\n", "")
+                if isMoveSourceEntityDevice == 0:
+                    move_source_entity_device = lines[idx+1].replace("\n", "")
 
-            if source_entity != None and record_period != None and offset_unit != None and offset != None and record_period_unit != None and record_limit_count != None:
+            if source_entity != None and record_period != None and offset_unit != None and offset != None and record_period_unit != None and record_limit_count != None and\
+                move_source_entity_device != None:
                 d = {CONF_SOURCE_ENTITY: source_entity,
                      CONF_SOURCE_ENTITY_ATTR: source_entity_attr,
                      CONF_NAME: name, 
@@ -135,7 +140,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                      CONF_RECORD_PERIOD: record_period, 
                      CONF_OFFSET_UNIT: offset_unit, 
                      CONF_OFFSET: offset,
-                     CONF_RECORD_LIMIT_COUNT: record_limit_count
+                     CONF_RECORD_LIMIT_COUNT: record_limit_count,
+                     CONF_MOVE_SOURCE_ENTITY_DEVICE: move_source_entity_device,
                      }
                 self.data[CONF_ENTITIES].append(d)
             f.close()
@@ -176,6 +182,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         device_registry = async_get(self.hass)
         devices = async_entries_for_config_entry(device_registry, self.config_entry.entry_id)
 
+        _LOGGER.debug("device registry : " + str(device_registry))
+
         #for e in entities:
         #    _LOGGER.debug("entity id : %s, name : %s",e.entity_id, e.original_name)
 
@@ -197,7 +205,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                                         host[CONF_RECORD_PERIOD],
                                         host[CONF_OFFSET_UNIT],
                                         host[CONF_OFFSET],
-                                        host[CONF_RECORD_LIMIT_COUNT]
+                                        host[CONF_RECORD_LIMIT_COUNT],
+                                        host[CONF_MOVE_SOURCE_ENTITY_DEVICE],
                     )] = e.entity_id
 
         if user_input is not None:
@@ -227,7 +236,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                                 CONF_RECORD_PERIOD: key[4],
                                 CONF_OFFSET_UNIT: key[5],
                                 CONF_OFFSET: key[6],
-                                CONF_RECORD_LIMIT_COUNT: key[7]
+                                CONF_RECORD_LIMIT_COUNT: key[7],
+                                CONF_MOVE_SOURCE_ENTITY_DEVICE: key[8],
                             }
                         )
                         
@@ -250,9 +260,18 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     # else:
                     return await self.async_step_entity()
 
-                if len(self.data[CONF_ENTITIES]) <= 0:
-                    for d in devices:
-                        device_registry.async_remove_device(d.id)
+                
+                device_registry = homeassistant.helpers.device_registry.async_get(self.hass)
+                devices = homeassistant.helpers.device_registry.async_entries_for_config_entry(device_registry, self.config_entry.entry_id)
+                _LOGGER.debug("devices : " + str(devices))
+                for d in devices:
+                    _LOGGER.debug("device config_entries : " + str(d.config_entries) + ", this entry : " + str(self.config_entry.entry_id))
+                    device_registry.async_update_device(d.id, remove_config_entry_id=self.config_entry.entry_id)
+                    _LOGGER.debug("device config_entries : " + str(d.config_entries) + ", this entry : " + str(self.config_entry.entry_id))
+
+                # if len(self.data[CONF_ENTITIES]) <= 0:
+                #     for d in devices:
+                #         device_registry.async_remove_device(d.id)
 
                 # User is done adding repos, create the config entry.
                 self.data["modifydatetime"] = datetime.now()
@@ -288,7 +307,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         CONF_RECORD_PERIOD: user_input[CONF_RECORD_PERIOD],
                         CONF_OFFSET_UNIT: user_input[CONF_OFFSET_UNIT],
                         CONF_OFFSET: user_input[CONF_OFFSET],
-                        CONF_RECORD_LIMIT_COUNT: user_input[CONF_RECORD_LIMIT_COUNT]
+                        CONF_RECORD_LIMIT_COUNT: user_input[CONF_RECORD_LIMIT_COUNT],
+                        CONF_MOVE_SOURCE_ENTITY_DEVICE: user_input[CONF_MOVE_SOURCE_ENTITY_DEVICE],
                     }
                 )
 
@@ -330,6 +350,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                             fp.write(str(e[CONF_OFFSET]) + "\n")
                             fp.write(FIELD_RECORD_LIMIT_COUNT)
                             fp.write(str(e[CONF_RECORD_LIMIT_COUNT]) + "\n")
+                            fp.write(FIELD_MOVE_SOURCE_ENTITY_DEVICE)
+                            fp.write(str(e[CONF_MOVE_SOURCE_ENTITY_DEVICE]) + "\n")
                             _LOGGER.debug(f"file write end")
 
                 return self.async_create_entry(title=self.data[CONF_DEVICE_NAME], data=self.data)
@@ -346,6 +368,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         vol.Required(CONF_OFFSET_UNIT, default=DATE_UNIT[0]): vol.In(DATE_UNIT),
                         vol.Required(CONF_OFFSET, default=0): int,
                         vol.Required(CONF_RECORD_LIMIT_COUNT, default=DEFAULT_LIMIT_COUNT): int,
+                        vol.Required(CONF_MOVE_SOURCE_ENTITY_DEVICE, default=False): cv.boolean,
                         vol.Optional(CONF_ADD_ANODHER): cv.boolean,
                     }
             ), errors=errors

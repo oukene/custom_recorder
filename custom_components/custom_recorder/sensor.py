@@ -18,9 +18,15 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
 from .const import *
-from homeassistant.helpers.entity import generate_entity_id
+from homeassistant.helpers.entity import generate_entity_id, DeviceInfo
 from homeassistant.helpers.event import async_track_state_change
 from homeassistant.components.sensor import SensorEntity
+
+from homeassistant.helpers import (
+    device_registry as dr,
+    entity_platform,
+    entity_registry as er,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -46,6 +52,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     """Add sensors for passed config_entry in HA."""
 
     hass.data[DOMAIN][config_entry.entry_id]["listener"] = []
+
     
     device = Device(config_entry.data.get(CONF_DEVICE_NAME), config_entry)
 
@@ -75,6 +82,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
             record_period = None
             data = {}
             record_limit_count = DEFAULT_LIMIT_COUNT
+            move_source_entity_device = False
             for idx, line in enumerate(lines):
                 isName = None
                 isSourceEntity = None
@@ -89,6 +97,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                 isOffset = line.find(FIELD_OFFSET)
                 isData = line.find(FIELD_DATA)
                 isRecordLimitCount = line.find(FIELD_RECORD_LIMIT_COUNT)
+                isMoveSourceEntityDevice = line.find(FIELD_MOVE_SOURCE_ENTITY_DEVICE)
                 # _LOGGER.debug(f"isName - {isName}, isOriginEntity - {isOriginEntity}, isRecordPeriod - {isRecordPeriod}")
                 if isName == 0:
                     name = lines[idx + 1].replace("\n", "")
@@ -108,6 +117,8 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                     offset = lines[idx+1].replace("\n", "")
                 if isRecordLimitCount == 0:
                     record_limit_count = lines[idx+1].replace("\n", "")
+                if isMoveSourceEntityDevice == 0:
+                    move_source_entity_device =  True if lines[idx+1].replace("\n", "") == "True" else False
                 if isData == 0:
                     # 기록된 데이터를 모두 읽은 후 종료
                     d = lines[idx+1].replace("\n", "")
@@ -141,7 +152,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                 data = dict(sorted(tmp.items()))
 
             _LOGGER.debug("데이터 사이즈 : %d", len(data))
-            if source_entity != None and record_period != None and offset_unit != None and offset != None and record_period_unit != None and record_limit_count != None:
+            if source_entity != None and record_period != None and offset_unit != None and offset != None and record_period_unit != None and record_limit_count != None and move_source_entity_device != None:
                 #d = {'origin_entity': origin_entity,
                 #        'name': name, 'record_period': record_period}
                 #_LOGGER.debug(f"add entity - {d}")
@@ -159,6 +170,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                         offset_unit,
                         offset,
                         record_limit_count,
+                        move_source_entity_device,
                         data,
                         file,
                         [d[0], d[1]],
@@ -183,6 +195,8 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                     fp2.write(offset + "\n")
                     fp2.write(FIELD_RECORD_LIMIT_COUNT)
                     fp2.write(str(record_limit_count) + "\n")
+                    fp2.write(FIELD_MOVE_SOURCE_ENTITY_DEVICE)
+                    fp2.write(str(move_source_entity_device) + "\n")
 
                     for d in data.keys():
                         fp2.write(FIELD_DATA)
@@ -218,6 +232,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                 device[12],
                 device[13],
                 device[14],
+                device[15],
             ))
     if new_devices:
         async_add_devices(new_devices)
@@ -278,25 +293,49 @@ class Sensorbase(SensorEntity):
 
     should_poll = False
 
-    def __init__(self, device):
+    def __init__(self, hass, device, source_entity, move_source_entity_device:bool):
         """Initialize the sensor."""
         self._device = device
+        self._device_info = DeviceInfo(identifiers={(DOMAIN, self._device.device_id)},
+                                        name=self._device.name,
+                                        sw_version=self._device.firmware_version,
+                                        model=self._device.model,
+                                        manufacturer=self._device.manufacturer
+                                    )
+
+        registry = er.async_get(hass)
+        
+        if move_source_entity_device:
+            source_entity = registry.async_get(source_entity)
+            dev_reg = dr.async_get(hass)
+            # Resolve source entity device
+            if (
+                (source_entity is not None)
+                and (source_entity.device_id is not None)
+                and (
+                    (
+                        device := dev_reg.async_get(
+                            device_id=source_entity.device_id,
+                        )
+                    )
+                    is not None
+                )
+            ):
+                self._device_info = DeviceInfo(
+                    identifiers=device.identifiers,
+                    name=device.name,
+                    sw_version=device.sw_version,
+                    model=device.model,
+                    manufacturer=device.manufacturer
+                )
 
     # To link this entity to the cover device, this property must return an
     # identifiers value matching that used in the cover, but no other information such
     # as name. If name is returned, this entity will then also become a device in the
     # HA UI.
     @property
-    def device_info(self):
-        """Information about this entity/device."""
-        return {
-            "identifiers": {(DOMAIN, self._device.device_id)},
-            # If desired, the name for the device could be different to the entity
-            "name": self._device.name,
-            "sw_version": self._device.firmware_version,
-            "model": self._device.model,
-            "manufacturer": self._device.manufacturer
-        }
+    def device_info(self) -> DeviceInfo | None:
+        return self._device_info
 
     # This property is important to let HA know if this entity is online or not.
     # If an entity is offline (return False), the UI will refelect this.
@@ -319,10 +358,10 @@ class Sensorbase(SensorEntity):
 class CustomRecorder(Sensorbase):
     """Representation of a Thermal Comfort Sensor."""
 
-    def __init__(self, hass, entry_id, device, entity_name, source_entity, source_entity_attr, record_period_unit, record_period, offset_unit, offset, record_limit_count, data, file, last_data, data_dir):
+    def __init__(self, hass, entry_id, device, entity_name, source_entity, source_entity_attr, record_period_unit, record_period, offset_unit, offset, record_limit_count, move_source_entity_device:bool, data, file, last_data, data_dir):
         """Initialize the sensor."""
-        super().__init__(device)
-
+        super().__init__(hass=hass, device=device, source_entity=source_entity, move_source_entity_device=move_source_entity_device)
+        _LOGGER.debug("move_source_entity_device : %d", move_source_entity_device)
         self.hass = hass
         self.entry_id = entry_id
         self._data_dir = data_dir
@@ -349,6 +388,7 @@ class CustomRecorder(Sensorbase):
         self._attributes[CONF_OFFSET_UNIT] = offset_unit
         self._attributes[CONF_OFFSET] = offset
         self._attributes[CONF_RECORD_LIMIT_COUNT] = record_limit_count
+        self._attributes[CONF_MOVE_SOURCE_ENTITY_DEVICE] = move_source_entity_device
         self._attributes["data_file"] = file
         #for key in STATISTICS_TYPE:
         #    self._attributes[key] = None

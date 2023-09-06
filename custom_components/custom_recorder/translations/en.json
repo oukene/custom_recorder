@@ -33,6 +33,7 @@
                     "offset_unit": "record time offset unit",
                     "offset": "record time offset",
                     "record_limit_count": "record limit count(0 = unlimited, only period check)",
+                    "move_source_entity_device": "Include it on the same device as the original",
                     "add_another": "add more recorder"
                 }
             }

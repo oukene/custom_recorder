@@ -4,6 +4,7 @@ import logging
 
 import os
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.core import HomeAssistant
 
 from .const import *
@@ -44,6 +45,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     return True
 
+# async def async_remove_config_entry_device(
+#     hass: HomeAssistant, config_entry: ConfigEntry, device_entry: DeviceEntry
+# ) -> bool:
+#     """Remove a config entry from a device."""
+#     _LOGGER.debug("async_remove_config_entry_device : " + str(device_entry))
+
+#     device_entry.config_entries.remove(config_entry.entry_id)
+#     #config_entry.async_remove(hass)
+
 
 async def update_listener(hass, entry):
     """Handle options update."""
@@ -69,6 +79,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
         )
     )
 
+    _LOGGER.debug("entry : " + str(entry.options))
     data_dir = entry.options.get(CONF_DATA_DIR)
     if os.path.isdir(data_dir):
         file_list = os.listdir(data_dir)

@@ -18,6 +18,7 @@ CONF_OFFSET_UNIT = "offset_unit"
 CONF_OFFSET = "offset"
 CONF_RECORD_LIMIT_COUNT = "record_limit_count"
 CONF_DATA_DIR = "data_dir"
+CONF_MOVE_SOURCE_ENTITY_DEVICE = "move_source_entity_device"
 
 DEFAULT_LIMIT_COUNT = 0
 
@@ -35,6 +36,7 @@ FIELD_OFFSET_UNIT = "[offset_unit]\n"
 FIELD_OFFSET = "[offset]\n"
 FIELD_DATA = "[data]\n"
 FIELD_RECORD_LIMIT_COUNT = "[record_limit_count]\n"
+FIELD_MOVE_SOURCE_ENTITY_DEVICE = "[move_source_entity_device]\n"
 
 DATE_UNIT = [
     'years', 
