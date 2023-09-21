@@ -260,14 +260,14 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     # else:
                     return await self.async_step_entity()
 
-                
-                device_registry = homeassistant.helpers.device_registry.async_get(self.hass)
-                devices = homeassistant.helpers.device_registry.async_entries_for_config_entry(device_registry, self.config_entry.entry_id)
-                _LOGGER.debug("devices : " + str(devices))
-                for d in devices:
-                    _LOGGER.debug("device config_entries : " + str(d.config_entries) + ", this entry : " + str(self.config_entry.entry_id))
-                    device_registry.async_update_device(d.id, remove_config_entry_id=self.config_entry.entry_id)
-                    _LOGGER.debug("device config_entries : " + str(d.config_entries) + ", this entry : " + str(self.config_entry.entry_id))
+                if len(self.data[CONF_ENTITIES]) <= 0:
+                    device_registry = homeassistant.helpers.device_registry.async_get(self.hass)
+                    devices = homeassistant.helpers.device_registry.async_entries_for_config_entry(device_registry, self.config_entry.entry_id)
+                    _LOGGER.debug("devices : " + str(devices))
+                    for d in devices:
+                        _LOGGER.debug("device config_entries : " + str(d.config_entries) + ", this entry : " + str(self.config_entry.entry_id))
+                        device_registry.async_update_device(d.id, remove_config_entry_id=self.config_entry.entry_id)
+                        _LOGGER.debug("device config_entries : " + str(d.config_entries) + ", this entry : " + str(self.config_entry.entry_id))
 
                 # if len(self.data[CONF_ENTITIES]) <= 0:
                 #     for d in devices:
