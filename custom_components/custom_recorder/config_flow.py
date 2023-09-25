@@ -261,7 +261,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     return await self.async_step_entity()
 
                 device_ids = set([])
-                entities = homeassistant.helpers.entity_registry.async_entries_for_config_entry(self._entity_registry, self.config_entry.entry_id)
+                entities = homeassistant.helpers.entity_registry.async_entries_for_config_entry(entity_registry, self.config_entry.entry_id)
                 device_registry = homeassistant.helpers.device_registry.async_get(self.hass)
                 devices = homeassistant.helpers.device_registry.async_entries_for_config_entry(device_registry, self.config_entry.entry_id)
 
