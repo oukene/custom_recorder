@@ -1,41 +1,56 @@
 {
-    "title": "\ucee4\uc2a4\ud140\u0020\ub808\ucf54\ub354",
+    "title": "\ucee4\uc2a4\ud140 \ub808\ucf54\ub354",
     "config": {
         "step": {
             "confirm": {
-                "description": "\uc124\uce58\ud558\uc2dc\uaca0\uc2b5\ub2c8\uae4c\u003f"
+                "description": "\uc124\uce58\ud558\uc2dc\uaca0\uc2b5\ub2c8\uae4c?"
             },
             "user": {
                 "data": {
-                    "device_name": "\uc0dd\uc131\ud560\u0020\uae30\uae30\uc758\u0020\uc774\ub984\uc744\u0020\uc785\ub825\ud558\uc138\uc694"
+                    "device_name": "\uc0dd\uc131\ud560 \uae30\uae30\uc758 \uc774\ub984\uc744 \uc785\ub825\ud558\uc138\uc694"
                 },
-                "description": "\ud655\uc778\uc744\u0020\ub204\ub974\uba74\u0020\uc124\uce58\ub429\ub2c8\ub2e4"
+                "description": "\ud655\uc778\uc744 \ub204\ub974\uba74 \uc124\uce58\ub429\ub2c8\ub2e4"
             }
         }
     },
     "options": {
         "step": {
             "init": {
-                "title": "\ucee4\uc2a4\ud140\u0020\ub808\ucf54\ub354\u0020\uc635\uc158",
+                "title": "\ucee4\uc2a4\ud140 \ub808\ucf54\ub354 \uc635\uc158",
                 "data": {
-                    "add_another": "\ub808\ucf54\ub354\u0020\uc5d4\ud2f0\ud2f0\u0020\ucd94\uac00"
+                    "add_another": "\ub808\ucf54\ub354 \uc5d4\ud2f0\ud2f0 \ucd94\uac00"
                 },
-                "description": "\uC120\uD0DD\uC744 \uD574\uC81C\uD558\uBA74 \uC0AD\uC81C\uB429\uB2C8\uB2E4"
+                "description": "\uc120\ud0dd\uc744 \ud574\uc81c\ud558\uba74 \uc0ad\uc81c\ub429\ub2c8\ub2e4"
+            },
+            "select": {
+                "title": "\uc5d4\ud2f0\ud2f0 \uc120\ud0dd",
+                "data": {
+                    "option_entities": "\uc218\uc815\ud560 \uc5d4\ud2f0\ud2f0\ub97c \uc120\ud0dd\ud558\uc138\uc694",
+                    "option_delete": "\uc120\ud0dd\ud55c \uc5d4\ud2f0\ud2f0\ub97c \uc0ad\uc81c\ud569\ub2c8\ub2e4"
+                }
             },
             "entity": {
-                "title": "\uAD6C\uC131\uC694\uC18C \uCD94\uAC00",
+                "title": "\uad6c\uc131\uc694\uc18c \ucd94\uac00",
                 "data": {
-                    "source_entity": "\uc6d0\ubcf8\u0020\uc5d4\ud2f0\ud2f0\ub97c\u0020\uc785\ub825\ud558\uc138\uc694",
-                    "source_entity_attr": "\uc6d0\ubcf8\u0020\uc5d4\ud2f0\ud2f0\uc758\u0020\uc18d\uc131\u0028\uc9c0\uc815\ud560\u0020\uacbd\uc6b0\u0020\uc18d\uc131\uac12\uc744\u0020\uae30\ub85d\u0029",
-                    "name": "\uc0dd\uc131\ub420\u0020\ub808\ucf54\ub354\u0020\uc13c\uc11c\uc758\u0020\uc774\ub984\uc744\u0020\uc785\ub825\ud558\uc138\uc694",
-                    "record_period_unit": "\ub370\uc774\ud130\u0020\uae30\ub85d\u0020\uae30\uac04\u0020\ub2e8\uc704",
-                    "record_period": "\ub370\uc774\ud130\u0020\uae30\ub85d\u0020\uae30\uac04",
-                    "offset_unit": "\ub370\uc774\ud130\u0020\uae30\ub85d\u0020\uc2dc\uac04\u0020\uc624\ud504\uc14b\u0020\ub2e8\uc704",
-                    "offset": "\ub370\uc774\ud130\u0020\uae30\ub85d\u0020\uc2dc\uac04\u0020\uc624\ud504\uc14b",
-                    "record_limit_count": "\uae30\ub85d\u0020\uc81c\ud55c\u0020\uac2f\uc218\ub97c\u0020\uc785\ub825\ud558\uc138\uc694\u0028\u0030\u0020\u003d\u0020\uc81c\ud55c\uc5c6\uc74c\u002c\u0020\uae30\uac04\uccb4\ud06c\ub9cc\u0029",
-                    "move_source_entity_device": "\uc6d0\ubcf8\u0020\uc5d4\ud2f0\ud2f0\uc640\u0020\ub3d9\uc77c\u0020\ub514\ubc14\uc774\uc2a4\uc5d0\u0020\ud3ec\ud568\uc2dc\ud0b5\ub2c8\ub2e4",
-                    "add_another": "\ub808\ucf54\ub354\u0020\uc5d4\ud2f0\ud2f0\u0020\ucd94\uac00"
+                    "source_entity": "\uc6d0\ubcf8 \uc5d4\ud2f0\ud2f0\ub97c \uc785\ub825\ud558\uc138\uc694",
+                    "source_entity_attr": "\uc6d0\ubcf8 \uc5d4\ud2f0\ud2f0\uc758 \uc18d\uc131(\uc9c0\uc815\ud560 \uacbd\uc6b0 \uc18d\uc131\uac12\uc744 \uae30\ub85d)",
+                    "name": "\uc0dd\uc131\ub420 \ub808\ucf54\ub354 \uc13c\uc11c\uc758 \uc774\ub984\uc744 \uc785\ub825\ud558\uc138\uc694",
+                    "record_period_unit": "\ub370\uc774\ud130 \uae30\ub85d \uae30\uac04 \ub2e8\uc704",
+                    "record_period": "\ub370\uc774\ud130 \uae30\ub85d \uae30\uac04",
+                    "offset_unit": "\ub370\uc774\ud130 \uae30\ub85d \uc2dc\uac04 \uc624\ud504\uc14b \ub2e8\uc704",
+                    "offset": "\ub370\uc774\ud130 \uae30\ub85d \uc2dc\uac04 \uc624\ud504\uc14b",
+                    "record_limit_count": "\uae30\ub85d \uc81c\ud55c \uac2f\uc218\ub97c \uc785\ub825\ud558\uc138\uc694(0 = \uc81c\ud55c\uc5c6\uc74c, \uae30\uac04\uccb4\ud06c\ub9cc)",
+                    "move_source_entity_device": "\uc6d0\ubcf8 \uc5d4\ud2f0\ud2f0\uc640 \ub3d9\uc77c \ub514\ubc14\uc774\uc2a4\uc5d0 \ud3ec\ud568\uc2dc\ud0b5\ub2c8\ub2e4",
+                    "add_another": "\ub808\ucf54\ub354 \uc5d4\ud2f0\ud2f0 \ucd94\uac00"
                 }
+            }
+        }
+    },
+    "selector": {
+        "option_select": {
+            "options": {
+                "option_modify": "\uad6c\uc131\uc694\uc18c\ub97c \uc218\uc815\ud569\ub2c8\ub2e4",
+                "option_add": "\uad6c\uc131\uc694\uc18c\ub97c \ucd94\uac00\ud569\ub2c8\ub2e4"
             }
         }
     }

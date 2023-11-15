@@ -20,6 +20,18 @@ CONF_RECORD_LIMIT_COUNT = "record_limit_count"
 CONF_DATA_DIR = "data_dir"
 CONF_MOVE_SOURCE_ENTITY_DEVICE = "move_source_entity_device"
 
+CONF_OPTION_SELECT = "option_select"
+CONF_OPTION_SELECT = "option_select"
+CONF_OPTION_DELETE = "option_delete"
+CONF_OPTION_ENTITIES = "option_entities"
+CONF_OPTION_MODIFY = "option_modify"
+CONF_OPTION_ADD = "option_add"
+
+CONF_OPTIONS = [
+    CONF_OPTION_MODIFY,
+    CONF_OPTION_ADD
+]
+
 DEFAULT_LIMIT_COUNT = 0
 
 DIR_PATH = "custom_recorder/"

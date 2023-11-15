@@ -1,17 +1,9 @@
-"""Platform for sensor integration."""
-# This file shows the setup for the sensors associated with the cover.
-# They are setup in the same way with the call to the async_setup_entry function
-# via HA from the module __init__. Each sensor has a device_class, this tells HA how
-# to display it in the UI (for know types). The unit_of_measurement property tells HA
-# what the unit is, so it can display the correct range. For predefined types (such as
-# battery), the unit_of_measurement should match what's expected.
+
 import logging
 from homeassistant.const import (
     STATE_UNKNOWN, STATE_UNAVAILABLE, ATTR_UNIT_OF_MEASUREMENT, ATTR_ICON, ATTR_ENTITY_PICTURE
 )
 
-import time
-import numpy
 import os
 import asyncio
 from datetime import datetime, timedelta
@@ -30,10 +22,6 @@ from homeassistant.helpers import (
 
 _LOGGER = logging.getLogger(__name__)
 
-# See cover.py for more details.
-# Note how both entities for each roller sensor (battry and illuminance) are added at
-# the same time to the same list. This way only a single async_add_devices call is
-# required.
 
 ENTITY_ID_FORMAT = DOMAIN + ".{}"
 
@@ -100,7 +88,8 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                 isMoveSourceEntityDevice = line.find(FIELD_MOVE_SOURCE_ENTITY_DEVICE)
                 # _LOGGER.debug(f"isName - {isName}, isOriginEntity - {isOriginEntity}, isRecordPeriod - {isRecordPeriod}")
                 if isName == 0:
-                    name = lines[idx + 1].replace("\n", "")
+                    #name = lines[idx + 1].replace("\n", "")
+                    name = file.replace(".txt", "")
                 if isSourceEntity == 0:
                     source_entity = lines[idx + 1].replace("\n", "")
                 if isSourceEntityAttr == 0:
@@ -202,18 +191,6 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                         fp2.write(FIELD_DATA)
                         fp2.write(d + "," + str(data[d]) + "\n")
 
-    #if config_entry.options.get(CONF_ENTITIES) != None:
-    #    for entity in config_entry.options.get(CONF_ENTITIES):
-    #        new_devices.append(
-    #            CustomRecorder(
-    #                hass,
-    #                config_entry.entry_id,
-    #                device,
-    #                entity[CONF_NAME],
-    #                entity[CONF_ORIGIN_ENTITY],
-    #                entity[CONF_RECORD_PERIOD],
-    #            )
-                #        )
     for device in tmp_devices:
         new_devices.append(
             CustomRecorder(
@@ -238,10 +215,8 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
         async_add_devices(new_devices)
 
 class Device:
-    """Dummy roller (device for HA) for Hello World example."""
 
     def __init__(self, name, config):
-        """Init dummy roller."""
         self._id = f"{name}_{config.entry_id}"
         self._name = name
         self._callbacks = set()
@@ -264,32 +239,21 @@ class Device:
         return self._name
 
     def register_callback(self, callback):
-        """Register callback, called when Roller changes state."""
         self._callbacks.add(callback)
 
     def remove_callback(self, callback):
-        """Remove previously registered callback."""
         self._callbacks.discard(callback)
 
-    # In a real implementation, this library would call it's call backs when it was
-    # notified of any state changeds for the relevant device.
     async def publish_updates(self):
-        """Schedule call all registered callbacks."""
         for callback in self._callbacks:
             callback()
 
     def publish_updates(self):
-        """Schedule call all registered callbacks."""
         for callback in self._callbacks:
             callback()
 
-# This base class shows the common properties and methods for a sensor as used in this
-# example. See each sensor for further details about properties and methods that
-# have been overridden.
-
 
 class Sensorbase(SensorEntity):
-    """Base representation of a Hello World Sensor."""
 
     should_poll = False
 
@@ -329,10 +293,6 @@ class Sensorbase(SensorEntity):
                     manufacturer=device.manufacturer
                 )
 
-    # To link this entity to the cover device, this property must return an
-    # identifiers value matching that used in the cover, but no other information such
-    # as name. If name is returned, this entity will then also become a device in the
-    # HA UI.
     @property
     def device_info(self) -> DeviceInfo | None:
         return self._device_info
@@ -370,6 +330,7 @@ class CustomRecorder(Sensorbase):
         _LOGGER.debug(
             f"data file - {DATA_DIR + file}, last_date - {last_data}")
         
+        _LOGGER.debug("entity_name : " + str(entity_name))
         self.entity_id = generate_entity_id(
             ENTITY_ID_FORMAT, "{}_{}".format(NAME, entity_name), hass=hass)
         self._name = "{}".format(entity_name)

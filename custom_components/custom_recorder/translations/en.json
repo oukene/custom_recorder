@@ -22,6 +22,13 @@
                 },
                 "description": "If unchecked it will be deleted"
             },
+            "select": {
+                "title": "Select an entity",
+                "data": {
+                    "option_entities": "Select the entity you want to edit",
+                    "option_delete": "Delete selected entity"
+                }
+            },
             "entity": {
                 "title": "add entity",
                 "data": {
@@ -36,6 +43,14 @@
                     "move_source_entity_device": "Include it on the same device as the original",
                     "add_another": "add more recorder"
                 }
+            }
+        }
+    },
+    "selector": {
+        "option_select": {
+            "options": {
+                "option_modify": "Modify an entity",
+                "option_add": "Add an entity"
             }
         }
     }
