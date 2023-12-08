@@ -163,6 +163,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                      CONF_RECORD_LIMIT_COUNT: record_limit_count,
                      CONF_MOVE_SOURCE_ENTITY_DEVICE: move_source_entity_device,
                      }
+
                 self.data[CONF_ENTITIES].append(d)
             f.close()
 
@@ -284,6 +285,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     os.makedirs(data_dir)
                 file_list = os.listdir(data_dir)
                 for e in self.data[CONF_ENTITIES]:
+
+
                     if e[CONF_NAME] + ".txt" not in file_list:
                         # 파일 생성
                         with open(data_dir + e[CONF_NAME] + ".txt", "w") as fp:
@@ -311,23 +314,48 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 return self.async_create_entry(title=self.data[CONF_DEVICE_NAME], data=self.data)
 
         _LOGGER.debug("selected option : " + str(self._selected_option))
-        return self.async_show_form(
-            step_id="entity",
-            data_schema=vol.Schema(
-                    {
-                        vol.Required(CONF_SOURCE_ENTITY, default=self._selected_option.get(CONF_SOURCE_ENTITY)): selector.EntitySelector(selector.EntitySelectorConfig()),
-                        vol.Optional(CONF_SOURCE_ENTITY_ATTR, description={"suggested_value": self._selected_option.get(CONF_SOURCE_ENTITY_ATTR, None)}): cv.string,
-                        vol.Optional(CONF_NAME, description={"suggested_value": self._selected_option.get(CONF_NAME, None)}): cv.string,
-                        vol.Required(CONF_RECORD_PERIOD_UNIT, default=self._selected_option.get(CONF_RECORD_PERIOD_UNIT, DATE_UNIT[0])): vol.In(DATE_UNIT),
-                        vol.Required(CONF_RECORD_PERIOD, default=int(self._selected_option.get(CONF_RECORD_PERIOD, 1))): int,
-                        vol.Required(CONF_OFFSET_UNIT, default=self._selected_option.get(CONF_OFFSET_UNIT, DATE_UNIT[0])): vol.In(DATE_UNIT),
-                        vol.Required(CONF_OFFSET, default=int(self._selected_option.get(CONF_OFFSET, 0))): int,
-                        vol.Required(CONF_RECORD_LIMIT_COUNT, default=int(self._selected_option.get(CONF_RECORD_LIMIT_COUNT, DEFAULT_LIMIT_COUNT))): int,
-                        vol.Required(CONF_MOVE_SOURCE_ENTITY_DEVICE, default=False if "False" == self._selected_option.get(CONF_MOVE_SOURCE_ENTITY_DEVICE, "False") else True): cv.boolean,
-                        #vol.Optional(CONF_ADD_ANODHER): cv.boolean,
-                    }
-            ), errors=errors
-        )
+
+        if self._selected_option:
+            return self.async_show_form(
+                step_id="entity",
+                data_schema=vol.Schema(
+                        {
+                            vol.Required(CONF_SOURCE_ENTITY, default=self._selected_option.get(CONF_SOURCE_ENTITY)): selector.EntitySelector(selector.EntitySelectorConfig()),
+                            vol.Optional(CONF_SOURCE_ENTITY_ATTR, description={"suggested_value": self._selected_option.get(CONF_SOURCE_ENTITY_ATTR, None)}): cv.string,
+                            vol.Required(CONF_RECORD_PERIOD_UNIT, default=self._selected_option.get(CONF_RECORD_PERIOD_UNIT, DATE_UNIT[0])): vol.In(DATE_UNIT),
+                            vol.Required(CONF_RECORD_PERIOD, default=int(self._selected_option.get(CONF_RECORD_PERIOD, 1))): int,
+                            vol.Required(CONF_OFFSET_UNIT, default=self._selected_option.get(CONF_OFFSET_UNIT, DATE_UNIT[0])): vol.In(DATE_UNIT),
+                            vol.Required(CONF_OFFSET, default=int(self._selected_option.get(CONF_OFFSET, 0))): int,
+                            vol.Required(CONF_RECORD_LIMIT_COUNT, default=int(self._selected_option.get(CONF_RECORD_LIMIT_COUNT, DEFAULT_LIMIT_COUNT))): int,
+                            vol.Required(CONF_MOVE_SOURCE_ENTITY_DEVICE, default=False if "False" == self._selected_option.get(CONF_MOVE_SOURCE_ENTITY_DEVICE, "False") else True): cv.boolean,
+                            #vol.Optional(CONF_ADD_ANODHER): cv.boolean,
+                        }
+                ), errors=errors
+                , description_placeholders={
+                    "entity_name": self._selected_option.get(CONF_NAME, "")
+                },
+            )
+        else:
+            return self.async_show_form(
+                step_id="entity",
+                data_schema=vol.Schema(
+                        {
+                            vol.Optional(CONF_NAME, description={"suggested_value": self._selected_option.get(CONF_NAME, None)}): cv.string,
+                            vol.Required(CONF_SOURCE_ENTITY, default=self._selected_option.get(CONF_SOURCE_ENTITY)): selector.EntitySelector(selector.EntitySelectorConfig()),
+                            vol.Optional(CONF_SOURCE_ENTITY_ATTR, description={"suggested_value": self._selected_option.get(CONF_SOURCE_ENTITY_ATTR, None)}): cv.string,
+                            vol.Required(CONF_RECORD_PERIOD_UNIT, default=self._selected_option.get(CONF_RECORD_PERIOD_UNIT, DATE_UNIT[0])): vol.In(DATE_UNIT),
+                            vol.Required(CONF_RECORD_PERIOD, default=int(self._selected_option.get(CONF_RECORD_PERIOD, 1))): int,
+                            vol.Required(CONF_OFFSET_UNIT, default=self._selected_option.get(CONF_OFFSET_UNIT, DATE_UNIT[0])): vol.In(DATE_UNIT),
+                            vol.Required(CONF_OFFSET, default=int(self._selected_option.get(CONF_OFFSET, 0))): int,
+                            vol.Required(CONF_RECORD_LIMIT_COUNT, default=int(self._selected_option.get(CONF_RECORD_LIMIT_COUNT, DEFAULT_LIMIT_COUNT))): int,
+                            vol.Required(CONF_MOVE_SOURCE_ENTITY_DEVICE, default=False if "False" == self._selected_option.get(CONF_MOVE_SOURCE_ENTITY_DEVICE, "False") else True): cv.boolean,
+                            # vol.Optional(CONF_ADD_ANODHER): cv.boolean,
+                        }
+                ), errors=errors
+                , description_placeholders={
+                    "entity_name": self._selected_option.get(CONF_NAME, "")
+                },
+            )
 
 
 class CannotConnect(exceptions.HomeAssistantError):

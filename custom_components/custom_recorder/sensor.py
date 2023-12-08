@@ -20,6 +20,8 @@ from homeassistant.helpers import (
     entity_registry as er,
 )
 
+from operator import eq
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -146,6 +148,21 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                 #        'name': name, 'record_period': record_period}
                 #_LOGGER.debug(f"add entity - {d}")
 
+                # options 에 설정이 있다면 덮어씌워줌
+                for option in config_entry.options.get(CONF_ENTITIES):
+                    _LOGGER.debug("option : " + str(option))
+                    _LOGGER.debug("d is : " + str(d) +", option : " + str(option.get(CONF_NAME)))
+                    if eq(name, option.get(CONF_NAME)):
+                        source_entity = option.get(CONF_SOURCE_ENTITY)
+                        source_entity_attr = option.get(CONF_SOURCE_ENTITY_ATTR)
+                        record_period_unit = option.get(CONF_RECORD_PERIOD_UNIT)
+                        record_period = option.get(CONF_RECORD_PERIOD)
+                        offset_unit = option.get(CONF_OFFSET_UNIT)
+                        offset = option.get(CONF_OFFSET)
+                        record_limit_count = int(option.get(CONF_RECORD_LIMIT_COUNT))
+                        move_source_entity_device = option.get(CONF_MOVE_SOURCE_ENTITY_DEVICE)
+
+
                 tmp_devices.append(
                     (
                         hass,
@@ -177,11 +194,11 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                     fp2.write(FIELD_RECORD_PERIOD_UNIT)
                     fp2.write(record_period_unit + "\n")
                     fp2.write(FIELD_RECORD_PERIOD)
-                    fp2.write(record_period + "\n")
+                    fp2.write(str(record_period) + "\n")
                     fp2.write(FIELD_OFFSET_UNIT)
                     fp2.write(offset_unit + "\n")
                     fp2.write(FIELD_OFFSET)
-                    fp2.write(offset + "\n")
+                    fp2.write(str(offset) + "\n")
                     fp2.write(FIELD_RECORD_LIMIT_COUNT)
                     fp2.write(str(record_limit_count) + "\n")
                     fp2.write(FIELD_MOVE_SOURCE_ENTITY_DEVICE)
