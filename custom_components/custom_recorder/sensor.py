@@ -154,7 +154,9 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                     _LOGGER.debug("d is : " + str(d) +", option : " + str(option.get(CONF_NAME)))
                     if eq(name, option.get(CONF_NAME)):
                         source_entity = option.get(CONF_SOURCE_ENTITY)
-                        source_entity_attr = option.get(CONF_SOURCE_ENTITY_ATTR)
+                        source_entity_attr = option.get(CONF_SOURCE_ENTITY_ATTR, None)
+                        if eq("None", source_entity_attr):
+                            source_entity_attr = None
                         record_period_unit = option.get(CONF_RECORD_PERIOD_UNIT)
                         record_period = option.get(CONF_RECORD_PERIOD)
                         offset_unit = option.get(CONF_OFFSET_UNIT)

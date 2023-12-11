@@ -255,11 +255,12 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 if self._selected_option.get(CONF_NAME):
                     self.remove_entity(self._selected_entity_id, self._selected_option)
                     # 파일 명 수정
-                    data_dir = self.data.get(CONF_DATA_DIR)
-                    os.rename(data_dir + self._selected_option.get(CONF_NAME) + ".txt",
-                              data_dir + user_input.get(CONF_NAME) + ".txt")
-                    file_list = os.listdir(data_dir)
-                    _LOGGER.debug("file_list size : %d", len(file_list))
+                    # data_dir = self.data.get(CONF_DATA_DIR)
+                    # os.rename(data_dir + self._selected_option.get(CONF_NAME) + ".txt",
+                    #           data_dir + user_input.get(CONF_NAME) + ".txt")
+                    # file_list = os.listdir(data_dir)
+                    # _LOGGER.debug("file_list size : %d", len(file_list))
+                    user_input[CONF_NAME] = self._selected_option.get(CONF_NAME)
                     self.clear_device_info()
                 # Input is valid, set data.
                 self.data[CONF_ENTITIES].append(
