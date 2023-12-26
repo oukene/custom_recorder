@@ -1,6 +1,9 @@
 {
     "title": "\ucee4\uc2a4\ud140 \ub808\ucf54\ub354",
     "config": {
+        "abort": {
+            "single_instance_allowed": "\ucef4\ud3ec\ub10c\ud2b8 \uc124\uce58\ub294 \ud558\ub098\ub9cc \uac00\ub2a5\ud569\ub2c8\ub2e4. \uc774\ubbf8 \uc124\uce58\ub418\uc5b4\uc788\ub294 \ud56d\ubaa9\uc744 \uc774\uc6a9\ud558\uc138\uc694"
+        },
         "step": {
             "confirm": {
                 "description": "\uc124\uce58\ud558\uc2dc\uaca0\uc2b5\ub2c8\uae4c?"
@@ -41,6 +44,7 @@
                     "offset": "\ub370\uc774\ud130 \uae30\ub85d \uc2dc\uac04 \uc624\ud504\uc14b",
                     "record_limit_count": "\uae30\ub85d \uc81c\ud55c \uac2f\uc218\ub97c \uc785\ub825\ud558\uc138\uc694(0 = \uc81c\ud55c\uc5c6\uc74c, \uae30\uac04\uccb4\ud06c\ub9cc)",
                     "move_source_entity_device": "\uc6d0\ubcf8 \uc5d4\ud2f0\ud2f0\uc640 \ub3d9\uc77c \ub514\ubc14\uc774\uc2a4\uc5d0 \ud3ec\ud568\uc2dc\ud0b5\ub2c8\ub2e4",
+                    "parent_device_entity_id_format": "\ud3ec\ud568\ub41c \uc7a5\uce58\uc758 \uc774\ub984\uc5d0 \ub530\ub77c \uc5d4\ud130\ud2f0 ID\ub97c \uc0dd\uc131\ud569\ub2c8\ub2e4",
                     "add_another": "\ub808\ucf54\ub354 \uc5d4\ud2f0\ud2f0 \ucd94\uac00"
                 }
             }

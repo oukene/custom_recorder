@@ -73,6 +73,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
             data = {}
             record_limit_count = DEFAULT_LIMIT_COUNT
             move_source_entity_device = False
+            parent_device_entity_id_format = False
             for idx, line in enumerate(lines):
                 isName = None
                 isSourceEntity = None
@@ -88,6 +89,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                 isData = line.find(FIELD_DATA)
                 isRecordLimitCount = line.find(FIELD_RECORD_LIMIT_COUNT)
                 isMoveSourceEntityDevice = line.find(FIELD_MOVE_SOURCE_ENTITY_DEVICE)
+                isParentDeviceEntityIdFormat = line.find(FIELD_PARENT_DEVICE_ENTITY_ID_FORMAT)
                 # _LOGGER.debug(f"isName - {isName}, isOriginEntity - {isOriginEntity}, isRecordPeriod - {isRecordPeriod}")
                 if isName == 0:
                     #name = lines[idx + 1].replace("\n", "")
@@ -110,6 +112,8 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                     record_limit_count = lines[idx+1].replace("\n", "")
                 if isMoveSourceEntityDevice == 0:
                     move_source_entity_device =  True if lines[idx+1].replace("\n", "") == "True" else False
+                if isParentDeviceEntityIdFormat == 0:
+                    parent_device_entity_id_format =  True if lines[idx+1].replace("\n", "") == "True" else False
                 if isData == 0:
                     # 기록된 데이터를 모두 읽은 후 종료
                     d = lines[idx+1].replace("\n", "")
@@ -143,7 +147,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                 data = dict(sorted(tmp.items()))
 
             _LOGGER.debug("데이터 사이즈 : %d", len(data))
-            if source_entity != None and record_period != None and offset_unit != None and offset != None and record_period_unit != None and record_limit_count != None and move_source_entity_device != None:
+            if source_entity != None and record_period != None and offset_unit != None and offset != None and record_period_unit != None and record_limit_count != None and move_source_entity_device != None and parent_device_entity_id_format != None:
                 #d = {'origin_entity': origin_entity,
                 #        'name': name, 'record_period': record_period}
                 #_LOGGER.debug(f"add entity - {d}")
@@ -163,6 +167,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                         offset = option.get(CONF_OFFSET)
                         record_limit_count = int(option.get(CONF_RECORD_LIMIT_COUNT))
                         move_source_entity_device = option.get(CONF_MOVE_SOURCE_ENTITY_DEVICE)
+                        parent_device_entity_id_format = option.get(CONF_PARENT_DEVICE_ENTITY_ID_FORMAT)
 
 
                 tmp_devices.append(
@@ -179,6 +184,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                         offset,
                         record_limit_count,
                         move_source_entity_device,
+                        parent_device_entity_id_format,
                         data,
                         file,
                         [d[0], d[1]],
@@ -205,6 +211,8 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                     fp2.write(str(record_limit_count) + "\n")
                     fp2.write(FIELD_MOVE_SOURCE_ENTITY_DEVICE)
                     fp2.write(str(move_source_entity_device) + "\n")
+                    fp2.write(FIELD_PARENT_DEVICE_ENTITY_ID_FORMAT)
+                    fp2.write(str(parent_device_entity_id_format) + "\n")
 
                     for d in data.keys():
                         fp2.write(FIELD_DATA)
@@ -229,6 +237,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                 device[13],
                 device[14],
                 device[15],
+                device[16],
             ))
     if new_devices:
         async_add_devices(new_devices)
@@ -337,7 +346,7 @@ class Sensorbase(SensorEntity):
 class CustomRecorder(Sensorbase):
     """Representation of a Thermal Comfort Sensor."""
 
-    def __init__(self, hass, entry_id, device, entity_name, source_entity, source_entity_attr, record_period_unit, record_period, offset_unit, offset, record_limit_count, move_source_entity_device:bool, data, file, last_data, data_dir):
+    def __init__(self, hass, entry_id, device, entity_name, source_entity, source_entity_attr, record_period_unit, record_period, offset_unit, offset, record_limit_count, move_source_entity_device:bool, parent_device_entity_id_format:bool, data, file, last_data, data_dir):
         """Initialize the sensor."""
         super().__init__(hass=hass, device=device, source_entity=source_entity, move_source_entity_device=move_source_entity_device)
         _LOGGER.debug("move_source_entity_device : %d", move_source_entity_device)
@@ -350,8 +359,11 @@ class CustomRecorder(Sensorbase):
             f"data file - {DATA_DIR + file}, last_date - {last_data}")
         
         _LOGGER.debug("entity_name : " + str(entity_name))
+
+        device_name = self._device_info.get(CONF_NAME, NAME) if parent_device_entity_id_format else NAME
+
         self.entity_id = generate_entity_id(
-            ENTITY_ID_FORMAT, "{}_{}".format(NAME, entity_name), hass=hass)
+            ENTITY_ID_FORMAT, "{}_{}".format(device_name, entity_name), hass=hass)
         self._name = "{}".format(entity_name)
         # self._name = "{} {}".format(device.device_id, SENSOR_TYPES[sensor_type][1])
         self._unit_of_measurement = None
@@ -369,6 +381,7 @@ class CustomRecorder(Sensorbase):
         self._attributes[CONF_OFFSET] = offset
         self._attributes[CONF_RECORD_LIMIT_COUNT] = record_limit_count
         self._attributes[CONF_MOVE_SOURCE_ENTITY_DEVICE] = move_source_entity_device
+        self._attributes[CONF_PARENT_DEVICE_ENTITY_ID_FORMAT] = parent_device_entity_id_format
         self._attributes["data_file"] = file
         #for key in STATISTICS_TYPE:
         #    self._attributes[key] = None

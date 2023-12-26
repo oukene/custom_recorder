@@ -19,6 +19,7 @@ CONF_OFFSET = "offset"
 CONF_RECORD_LIMIT_COUNT = "record_limit_count"
 CONF_DATA_DIR = "data_dir"
 CONF_MOVE_SOURCE_ENTITY_DEVICE = "move_source_entity_device"
+CONF_PARENT_DEVICE_ENTITY_ID_FORMAT = "parent_device_entity_id_format"
 
 CONF_OPTION_SELECT = "option_select"
 CONF_OPTION_SELECT = "option_select"
@@ -49,6 +50,7 @@ FIELD_OFFSET = "[offset]\n"
 FIELD_DATA = "[data]\n"
 FIELD_RECORD_LIMIT_COUNT = "[record_limit_count]\n"
 FIELD_MOVE_SOURCE_ENTITY_DEVICE = "[move_source_entity_device]\n"
+FIELD_PARENT_DEVICE_ENTITY_ID_FORMAT = "[parent_device_entity_id_format]\n"
 
 DATE_UNIT = [
     'years', 

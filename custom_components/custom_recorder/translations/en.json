@@ -1,6 +1,9 @@
 {
     "title": "Custom Recorder",
     "config": {
+        "abort": {
+            "single_instance_allowed": "Component installation cannot be duplicated. Use the installed components"
+        },
         "step": {
             "confirm": {
                 "description": "Do you want to set up?"
@@ -41,6 +44,7 @@
                     "offset": "record time offset",
                     "record_limit_count": "record limit count(0 = unlimited, only period check)",
                     "move_source_entity_device": "Include it on the same device as the original",
+                    "parent_device_entity_id_format": "Create an entity ID according to the name of the included device.",
                     "add_another": "add more recorder"
                 }
             }

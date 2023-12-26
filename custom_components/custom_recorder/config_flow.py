@@ -39,6 +39,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input: Optional[Dict[str, Any]] = None):
         """Handle the initial step."""
         errors = {}
+        if self._async_current_entries():
+            return self.async_abort(reason="single_instance_allowed")
+        if self.hass.data.get(DOMAIN):
+            return self.async_abort(reason="single_instance_allowed")
+
         if user_input is not None:
             self.data = user_input
             return self.async_create_entry(title=user_input[CONF_DEVICE_NAME], data=self.data)
@@ -119,6 +124,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             lines = f.readlines()
             record_limit_count = DEFAULT_LIMIT_COUNT
             move_source_entity_device = False
+            parent_device_entity_id_format = False
             for idx, line in enumerate(lines):
                 #_LOGGER.debug(f"idx - {idx}, line = {line}")
                 isName = line.find(FIELD_NAME)
@@ -130,6 +136,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 isOffset = line.find(FIELD_OFFSET)
                 isRecordLimitCount = line.find(FIELD_RECORD_LIMIT_COUNT)
                 isMoveSourceEntityDevice = line.find(FIELD_MOVE_SOURCE_ENTITY_DEVICE)
+                isParentEntityIdFormat = line.find(FIELD_PARENT_DEVICE_ENTITY_ID_FORMAT)
                 #_LOGGER.debug(f"isName - {isName}, isOriginEntity - {isOriginEntity}, isRecordPeriod - {isRecordPeriod}")
 
                 if isName == 0:
@@ -150,6 +157,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     record_limit_count = lines[idx+1].replace("\n", "")
                 if isMoveSourceEntityDevice == 0:
                     move_source_entity_device = lines[idx+1].replace("\n", "")
+                if isParentEntityIdFormat == 0:
+                    parent_device_entity_id_format = lines[idx+1].replace("\n", "")
 
             if source_entity != None and record_period != None and offset_unit != None and offset != None and record_period_unit != None and record_limit_count != None and\
                 move_source_entity_device != None:
@@ -162,6 +171,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                      CONF_OFFSET: offset,
                      CONF_RECORD_LIMIT_COUNT: record_limit_count,
                      CONF_MOVE_SOURCE_ENTITY_DEVICE: move_source_entity_device,
+                     CONF_PARENT_DEVICE_ENTITY_ID_FORMAT: parent_device_entity_id_format
                      }
 
                 self.data[CONF_ENTITIES].append(d)
@@ -274,6 +284,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         CONF_OFFSET: user_input[CONF_OFFSET],
                         CONF_RECORD_LIMIT_COUNT: user_input[CONF_RECORD_LIMIT_COUNT],
                         CONF_MOVE_SOURCE_ENTITY_DEVICE: user_input[CONF_MOVE_SOURCE_ENTITY_DEVICE],
+                        CONF_PARENT_DEVICE_ENTITY_ID_FORMAT: user_input[CONF_PARENT_DEVICE_ENTITY_ID_FORMAT],
                     }
                 )
 
@@ -310,6 +321,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                             fp.write(str(e[CONF_RECORD_LIMIT_COUNT]) + "\n")
                             fp.write(FIELD_MOVE_SOURCE_ENTITY_DEVICE)
                             fp.write(str(e[CONF_MOVE_SOURCE_ENTITY_DEVICE]) + "\n")
+                            fp.write(FIELD_PARENT_DEVICE_ENTITY_ID_FORMAT)
+                            fp.write(str(e[CONF_PARENT_DEVICE_ENTITY_ID_FORMAT]) + "\n")
                             _LOGGER.debug(f"file write end")
 
                 return self.async_create_entry(title=self.data[CONF_DEVICE_NAME], data=self.data)
@@ -328,7 +341,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                             vol.Required(CONF_OFFSET_UNIT, default=self._selected_option.get(CONF_OFFSET_UNIT, DATE_UNIT[0])): vol.In(DATE_UNIT),
                             vol.Required(CONF_OFFSET, default=int(self._selected_option.get(CONF_OFFSET, 0))): int,
                             vol.Required(CONF_RECORD_LIMIT_COUNT, default=int(self._selected_option.get(CONF_RECORD_LIMIT_COUNT, DEFAULT_LIMIT_COUNT))): int,
-                            vol.Required(CONF_MOVE_SOURCE_ENTITY_DEVICE, default=False if "False" == self._selected_option.get(CONF_MOVE_SOURCE_ENTITY_DEVICE, "False") else True): cv.boolean,
+                            vol.Required(CONF_MOVE_SOURCE_ENTITY_DEVICE, default=False if self._selected_option.get(CONF_MOVE_SOURCE_ENTITY_DEVICE, "False") in ("False", "None") else True): cv.boolean,
+                            vol.Required(CONF_PARENT_DEVICE_ENTITY_ID_FORMAT, default=False if self._selected_option.get(CONF_PARENT_DEVICE_ENTITY_ID_FORMAT, "False") in ("False", "None") else True): cv.boolean,
                             #vol.Optional(CONF_ADD_ANODHER): cv.boolean,
                         }
                 ), errors=errors
@@ -349,7 +363,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                             vol.Required(CONF_OFFSET_UNIT, default=self._selected_option.get(CONF_OFFSET_UNIT, DATE_UNIT[0])): vol.In(DATE_UNIT),
                             vol.Required(CONF_OFFSET, default=int(self._selected_option.get(CONF_OFFSET, 0))): int,
                             vol.Required(CONF_RECORD_LIMIT_COUNT, default=int(self._selected_option.get(CONF_RECORD_LIMIT_COUNT, DEFAULT_LIMIT_COUNT))): int,
-                            vol.Required(CONF_MOVE_SOURCE_ENTITY_DEVICE, default=False if "False" == self._selected_option.get(CONF_MOVE_SOURCE_ENTITY_DEVICE, "False") else True): cv.boolean,
+                            vol.Required(CONF_MOVE_SOURCE_ENTITY_DEVICE, default=False if self._selected_option.get(CONF_MOVE_SOURCE_ENTITY_DEVICE, "False") in ("False", "None") else True): cv.boolean,
+                            vol.Required(CONF_PARENT_DEVICE_ENTITY_ID_FORMAT, default=False if self._selected_option.get(CONF_PARENT_DEVICE_ENTITY_ID_FORMAT, "False") in ("False", "None") else True): cv.boolean,
                             # vol.Optional(CONF_ADD_ANODHER): cv.boolean,
                         }
                 ), errors=errors
