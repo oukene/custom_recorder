@@ -130,7 +130,6 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                     d[1] = float(d[1]) if isNumber(d[1]) else d[1]
                     #d[1] = d[1].replace('\n', '')
                     #_LOGGER.debug(f"d - {d[0]}, val - {d[1]}")
-                    _LOGGER.debug("데이터 추가 : " + str(d))
                     data[str(d[0])] = d[1]
 
             tmp = {}
@@ -146,7 +145,6 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
 
                 data = dict(sorted(tmp.items()))
 
-            _LOGGER.debug("데이터 사이즈 : %d", len(data))
             if source_entity != None and record_period != None and offset_unit != None and offset != None and record_period_unit != None and record_limit_count != None and move_source_entity_device != None and parent_device_entity_id_format != None:
                 #d = {'origin_entity': origin_entity,
                 #        'name': name, 'record_period': record_period}
