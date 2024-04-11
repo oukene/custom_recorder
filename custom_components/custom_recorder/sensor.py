@@ -343,6 +343,7 @@ class Sensorbase(SensorEntity):
 
 class CustomRecorder(Sensorbase):
     """Representation of a Thermal Comfort Sensor."""
+    _attr_has_entity_name = True
 
     def __init__(self, hass, entry_id, device, entity_name, source_entity, source_entity_attr, record_period_unit, record_period, offset_unit, offset, record_limit_count, move_source_entity_device:bool, parent_device_entity_id_format:bool, data, file, last_data, data_dir):
         """Initialize the sensor."""
@@ -362,15 +363,14 @@ class CustomRecorder(Sensorbase):
 
         self.entity_id = generate_entity_id(
             ENTITY_ID_FORMAT, "{}_{}".format(device_name, entity_name), hass=hass)
-        self._name = "{}".format(entity_name)
+        self._attr_name = "{}".format(entity_name)
         # self._name = "{} {}".format(device.device_id, SENSOR_TYPES[sensor_type][1])
-        self._unit_of_measurement = None
         _LOGGER.debug("last_data : " + str(last_data[1]))
         self._state = last_data[1]
         self._offset_unit = offset_unit
         self._offset = offset
         self._attributes = {}
-        self._entity_picture = None
+        self._attr_entity_picture = None
         self._attributes[CONF_SOURCE_ENTITY] = source_entity
         self._attributes[CONF_SOURCE_ENTITY_ATTR] = source_entity_attr
         self._attributes[CONF_RECORD_PERIOD_UNIT] = record_period_unit
@@ -386,7 +386,6 @@ class CustomRecorder(Sensorbase):
         self.calc_statistics(data)
         self._attributes["last_update_time"] = last_data[0]
         self._attributes["data"] = data
-        self._icon = None
         self._record_period_unit = record_period_unit
         self._record_period = record_period
         self._loop = asyncio.get_event_loop()
@@ -440,11 +439,11 @@ class CustomRecorder(Sensorbase):
         #try:
         _LOGGER.debug("call entity listener")
         if _is_valid_state(new_state):
-            self._unit_of_measurement = new_state.attributes.get(
+            self._attr_unit_of_measurement = new_state.attributes.get(
                 ATTR_UNIT_OF_MEASUREMENT)
-            self._icon = new_state.attributes.get(
+            self._attr_icon = new_state.attributes.get(
                 ATTR_ICON)
-            self._entity_picture = new_state.attributes.get(
+            self._attr_entity_picture = new_state.attributes.get(
                 ATTR_ENTITY_PICTURE)
             
             _LOGGER.debug(f"source entity attr - {self._source_entity_attr}")
@@ -512,39 +511,13 @@ class CustomRecorder(Sensorbase):
 
     """Sensor Properties"""
     @property
-    def has_entity_name(self) -> bool:
-        return True
-
-    @property
-    def entity_picture(self):
-        try:
-            return self._entity_picture
-        except:
-            return None
-
-    @property
     def state(self):
         return self._state
-
-    @property
-    def unit_of_measurement(self):
-        """Return the unit of measurement."""
-        return self._unit_of_measurement
-
-    
-    @property
-    def icon(self) -> str | None:
-        return self._icon
 
     @property
     def extra_state_attributes(self):
         """Return entity specific state attributes."""
         return self._attributes
-
-    @property
-    def name(self):
-        """Return the name of the sensor."""
-        return self._name
 
     # @property
     # def device_class(self) -> Optional[str]:
