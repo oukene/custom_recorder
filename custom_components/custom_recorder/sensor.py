@@ -11,7 +11,8 @@ from dateutil.relativedelta import relativedelta
 
 from .const import *
 from homeassistant.helpers.entity import generate_entity_id, DeviceInfo
-from homeassistant.helpers.event import async_track_state_change
+from homeassistant.helpers.event import async_track_state_change_event
+from homeassistant.core import Event, EventStateChangedData, callback
 from homeassistant.components.sensor import SensorEntity
 
 from homeassistant.helpers import (
@@ -333,12 +334,12 @@ class Sensorbase(SensorEntity):
     async def async_added_to_hass(self):
         """Run when this Entity has been added to HA."""
         # Sensors should also register callbacks to HA when their state changes
-        self._device.register_callback(self.async_write_ha_state)
+        self._device.register_callback(self.schedule_update_ha_state)
 
     async def async_will_remove_from_hass(self):
         """Entity being removed from hass."""
         # The opposite of async_added_to_hass. Remove any registered call backs here.
-        self._device.remove_callback(self.async_write_ha_state)
+        self._device.remove_callback(self.schedule_update_ha_state)
 
 
 class CustomRecorder(Sensorbase):
@@ -422,10 +423,9 @@ class CustomRecorder(Sensorbase):
                     self._attributes[key] = STATISTICS_TYPE[key](list(data.values()))
 
     def setup(self):
-        self.hass.data[DOMAIN][self.entry_id]["listener"].append(async_track_state_change(
-            self.hass, self._source_entity, self.entity_listener))
+        self.hass.data[DOMAIN][self.entry_id]["listener"].append(async_track_state_change_event(
+            self.hass, self._source_entity, self._state_changed_event))
 
-        
         state = self.hass.states.get(self._source_entity)
         _LOGGER.debug("entity id : %s", self.entity_id)
         old_state = self.hass.states.get(self.entity_id)
@@ -434,12 +434,17 @@ class CustomRecorder(Sensorbase):
         #self._state = state.state
 
         #self._state = self.hass.states.get(self._switch_entity).state
+    
+    @callback  # type: ignore[misc]
+    def _state_changed_event(self, event: Event) -> None:
+        """state change event."""
+        self.entity_listener(event.data.get("entity_id"), event.data.get("old_state"), event.data.get("new_state"))
 
     def entity_listener(self, entity, old_state, new_state):
         #try:
         _LOGGER.debug("call entity listener")
         if _is_valid_state(new_state):
-            self._attr_unit_of_measurement = new_state.attributes.get(
+            self._attr_native_unit_of_measurement = new_state.attributes.get(
                 ATTR_UNIT_OF_MEASUREMENT)
             self._attr_icon = new_state.attributes.get(
                 ATTR_ICON)
@@ -530,7 +535,7 @@ class CustomRecorder(Sensorbase):
     # @property
     # def unit_of_measurement(self):
     #    """Return the unit_of_measurement of the device."""
-    #    return self._unit_of_measurement
+    #    return self._attr_unit_of_measurement
     # @property
     # def should_poll(self):
     #    """No polling needed."""
