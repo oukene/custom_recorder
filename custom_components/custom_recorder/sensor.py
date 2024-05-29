@@ -13,7 +13,7 @@ from .const import *
 from homeassistant.helpers.entity import generate_entity_id, DeviceInfo
 from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.core import Event, EventStateChangedData, callback
-from homeassistant.components.sensor import SensorEntity, SensorStateClass, SensorDeviceClass
+from homeassistant.components.sensor import SensorEntity
 
 from homeassistant.helpers import (
     device_registry as dr,
@@ -295,10 +295,6 @@ class Sensorbase(SensorEntity):
                                     )
 
         registry = er.async_get(hass)
-        source_entity = registry.async_get(source_entity)
-        self._attr_device_class = SensorDeviceClass.ENERGY
-        self._attr_state_class = SensorStateClass.TOTAL_INCREASING
-
         
         if move_source_entity_device:
             source_entity = registry.async_get(source_entity)
@@ -400,7 +396,6 @@ class CustomRecorder(Sensorbase):
         self._setup = False
 
         self._device.publish_updates()
-        self._unit_of_measurement = None
 
         self.setup()
         #self._loop.create_task(self.setup())
@@ -449,8 +444,8 @@ class CustomRecorder(Sensorbase):
         #try:
         _LOGGER.debug("call entity listener")
         if _is_valid_state(new_state):
-            if self._source_entity_attr == None:
-                self._unit_of_measurement = new_state.attributes.get(
+            if self._source_entity_attr != None:
+                self._attr_native_unit_of_measurement = new_state.attributes.get(
                     ATTR_UNIT_OF_MEASUREMENT)
             self._attr_icon = new_state.attributes.get(
                 ATTR_ICON)
@@ -538,10 +533,10 @@ class CustomRecorder(Sensorbase):
     # def entity_picture(self):
     #    """Return the entity_picture to use in the frontend, if any."""
     #    return self._entity_picture
-    @property
-    def unit_of_measurement(self):
-       """Return the unit_of_measurement of the device."""
-       return self._unit_of_measurement
+    # @property
+    # def unit_of_measurement(self):
+    #    """Return the unit_of_measurement of the device."""
+    #    return self._attr_unit_of_measurement
     # @property
     # def should_poll(self):
     #    """No polling needed."""
