@@ -444,7 +444,7 @@ class CustomRecorder(Sensorbase):
         #try:
         _LOGGER.debug("call entity listener")
         if _is_valid_state(new_state):
-            if self._source_entity_attr != None:
+            if self._source_entity_attr == None:
                 self._attr_native_unit_of_measurement = new_state.attributes.get(
                     ATTR_UNIT_OF_MEASUREMENT)
             self._attr_icon = new_state.attributes.get(
