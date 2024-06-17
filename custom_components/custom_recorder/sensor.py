@@ -59,163 +59,167 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
         os.makedirs(data_dir)
 
     
-    # 디렉토리에 있는 목록으로 config 대체
-    file_list = os.listdir(data_dir)
-    for file in file_list:
-        d = [None, None]
-        _LOGGER.debug(f"filename - {file}")
-        with open(data_dir + file) as fp:
-            lines = fp.readlines()
-            #_LOGGER.debug("lines : %s", lines)
-            name = None
-            source_entity = None
-            source_entity_attr = None
-            record_period = None
-            data = {}
-            record_limit_count = DEFAULT_LIMIT_COUNT
-            move_source_entity_device = False
-            parent_device_entity_id_format = False
-            for idx, line in enumerate(lines):
-                isName = None
-                isSourceEntity = None
-                isRecordPeriod = None
-                isData = None
-                isName = line.find(FIELD_NAME)
-                isSourceEntity = line.find(FIELD_SOURCE_ENTITY)
-                isSourceEntityAttr = line.find(FIELD_SOURCE_ENTITY_ATTR)
-                isRecordPeriodUnit = line.find(FIELD_RECORD_PERIOD_UNIT)
-                isRecordPeriod = line.find(FIELD_RECORD_PERIOD)
-                isOffsetUnit = line.find(FIELD_OFFSET_UNIT)
-                isOffset = line.find(FIELD_OFFSET)
-                isData = line.find(FIELD_DATA)
-                isRecordLimitCount = line.find(FIELD_RECORD_LIMIT_COUNT)
-                isMoveSourceEntityDevice = line.find(FIELD_MOVE_SOURCE_ENTITY_DEVICE)
-                isParentDeviceEntityIdFormat = line.find(FIELD_PARENT_DEVICE_ENTITY_ID_FORMAT)
-                # _LOGGER.debug(f"isName - {isName}, isOriginEntity - {isOriginEntity}, isRecordPeriod - {isRecordPeriod}")
-                if isName == 0:
-                    #name = lines[idx + 1].replace("\n", "")
-                    name = file.replace(".txt", "")
-                if isSourceEntity == 0:
-                    source_entity = lines[idx + 1].replace("\n", "")
-                if isSourceEntityAttr == 0:
-                    source_entity_attr = lines[idx + 1].replace("\n", "")
-                    if source_entity_attr == "None":
-                        source_entity_attr = None
-                if isRecordPeriodUnit == 0:
-                    record_period_unit = lines[idx + 1].replace("\n", "")
-                if isRecordPeriod == 0:
-                    record_period = lines[idx + 1].replace("\n", "")
-                if isOffsetUnit == 0:
-                    offset_unit = lines[idx+1].replace("\n", "")
-                if isOffset == 0:
-                    offset = lines[idx+1].replace("\n", "")
-                if isRecordLimitCount == 0:
-                    record_limit_count = lines[idx+1].replace("\n", "")
-                if isMoveSourceEntityDevice == 0:
-                    move_source_entity_device =  True if lines[idx+1].replace("\n", "") == "True" else False
-                if isParentDeviceEntityIdFormat == 0:
-                    parent_device_entity_id_format =  True if lines[idx+1].replace("\n", "") == "True" else False
-                if isData == 0:
-                    # 기록된 데이터를 모두 읽은 후 종료
-                    d = lines[idx+1].replace("\n", "")
-                    d = d.split(",")
-                    #if datetime(d[0]) < datetime.now() - timedelta(days=int(record_period)):
-                    args = {}
-                    offset_args = {}
-                    args[record_period_unit] = int(record_period)
-                    # offset 설정만큼 보정
-                    offset_args[offset_unit] = int(offset)
-                    if datetime.strptime(d[0], '%Y-%m-%d %H:%M:%S.%f') < datetime.now() - relativedelta(**args) - relativedelta(**offset_args):
-                        continue
-                    #d[0] = d[0]
-                    d[1] = float(d[1]) if isNumber(d[1]) else d[1]
-                    #d[1] = d[1].replace('\n', '')
-                    #_LOGGER.debug(f"d - {d[0]}, val - {d[1]}")
-                    data[str(d[0])] = d[1]
+    def _load_setting():
 
-            tmp = {}
-            # record limit count 체크
-            if int(record_limit_count) != 0:
-                _LOGGER.debug("data size : %d", len(data))
-                for key in sorted(data.keys(), reverse=True):
-                    _LOGGER.debug("len : %d, limitCount : %d", len(tmp), int(record_limit_count))
-                    if len(tmp) <= int(record_limit_count) - 1:
-                        tmp[key] = data[key]
-                    else:
-                        break
-
-                data = dict(sorted(tmp.items()))
-
-            if source_entity != None and record_period != None and offset_unit != None and offset != None and record_period_unit != None and record_limit_count != None and move_source_entity_device != None and parent_device_entity_id_format != None:
-                #d = {'origin_entity': origin_entity,
-                #        'name': name, 'record_period': record_period}
-                #_LOGGER.debug(f"add entity - {d}")
-
-                # options 에 설정이 있다면 덮어씌워줌
-                for option in config_entry.options.get(CONF_ENTITIES):
-                    _LOGGER.debug("option : " + str(option))
-                    _LOGGER.debug("d is : " + str(d) +", option : " + str(option.get(CONF_NAME)))
-                    if eq(name, option.get(CONF_NAME)):
-                        source_entity = option.get(CONF_SOURCE_ENTITY)
-                        source_entity_attr = option.get(CONF_SOURCE_ENTITY_ATTR, None)
-                        if eq("None", source_entity_attr):
+        # 디렉토리에 있는 목록으로 config 대체
+        file_list = os.listdir(data_dir)
+        for file in file_list:
+            d = [None, None]
+            _LOGGER.debug(f"filename - {file}")
+            with open(data_dir + file) as fp:
+                lines = fp.readlines()
+                #_LOGGER.debug("lines : %s", lines)
+                name = None
+                source_entity = None
+                source_entity_attr = None
+                record_period = None
+                data = {}
+                record_limit_count = DEFAULT_LIMIT_COUNT
+                move_source_entity_device = False
+                parent_device_entity_id_format = False
+                for idx, line in enumerate(lines):
+                    isName = None
+                    isSourceEntity = None
+                    isRecordPeriod = None
+                    isData = None
+                    isName = line.find(FIELD_NAME)
+                    isSourceEntity = line.find(FIELD_SOURCE_ENTITY)
+                    isSourceEntityAttr = line.find(FIELD_SOURCE_ENTITY_ATTR)
+                    isRecordPeriodUnit = line.find(FIELD_RECORD_PERIOD_UNIT)
+                    isRecordPeriod = line.find(FIELD_RECORD_PERIOD)
+                    isOffsetUnit = line.find(FIELD_OFFSET_UNIT)
+                    isOffset = line.find(FIELD_OFFSET)
+                    isData = line.find(FIELD_DATA)
+                    isRecordLimitCount = line.find(FIELD_RECORD_LIMIT_COUNT)
+                    isMoveSourceEntityDevice = line.find(FIELD_MOVE_SOURCE_ENTITY_DEVICE)
+                    isParentDeviceEntityIdFormat = line.find(FIELD_PARENT_DEVICE_ENTITY_ID_FORMAT)
+                    # _LOGGER.debug(f"isName - {isName}, isOriginEntity - {isOriginEntity}, isRecordPeriod - {isRecordPeriod}")
+                    if isName == 0:
+                        #name = lines[idx + 1].replace("\n", "")
+                        name = file.replace(".txt", "")
+                    if isSourceEntity == 0:
+                        source_entity = lines[idx + 1].replace("\n", "")
+                    if isSourceEntityAttr == 0:
+                        source_entity_attr = lines[idx + 1].replace("\n", "")
+                        if source_entity_attr == "None":
                             source_entity_attr = None
-                        record_period_unit = option.get(CONF_RECORD_PERIOD_UNIT)
-                        record_period = option.get(CONF_RECORD_PERIOD)
-                        offset_unit = option.get(CONF_OFFSET_UNIT)
-                        offset = option.get(CONF_OFFSET)
-                        record_limit_count = int(option.get(CONF_RECORD_LIMIT_COUNT))
-                        move_source_entity_device = option.get(CONF_MOVE_SOURCE_ENTITY_DEVICE)
-                        parent_device_entity_id_format = option.get(CONF_PARENT_DEVICE_ENTITY_ID_FORMAT)
+                    if isRecordPeriodUnit == 0:
+                        record_period_unit = lines[idx + 1].replace("\n", "")
+                    if isRecordPeriod == 0:
+                        record_period = lines[idx + 1].replace("\n", "")
+                    if isOffsetUnit == 0:
+                        offset_unit = lines[idx+1].replace("\n", "")
+                    if isOffset == 0:
+                        offset = lines[idx+1].replace("\n", "")
+                    if isRecordLimitCount == 0:
+                        record_limit_count = lines[idx+1].replace("\n", "")
+                    if isMoveSourceEntityDevice == 0:
+                        move_source_entity_device =  True if lines[idx+1].replace("\n", "") == "True" else False
+                    if isParentDeviceEntityIdFormat == 0:
+                        parent_device_entity_id_format =  True if lines[idx+1].replace("\n", "") == "True" else False
+                    if isData == 0:
+                        # 기록된 데이터를 모두 읽은 후 종료
+                        d = lines[idx+1].replace("\n", "")
+                        d = d.split(",")
+                        #if datetime(d[0]) < datetime.now() - timedelta(days=int(record_period)):
+                        args = {}
+                        offset_args = {}
+                        args[record_period_unit] = int(record_period)
+                        # offset 설정만큼 보정
+                        offset_args[offset_unit] = int(offset)
+                        if datetime.strptime(d[0], '%Y-%m-%d %H:%M:%S.%f') < datetime.now() - relativedelta(**args) - relativedelta(**offset_args):
+                            continue
+                        #d[0] = d[0]
+                        d[1] = float(d[1]) if isNumber(d[1]) else d[1]
+                        #d[1] = d[1].replace('\n', '')
+                        #_LOGGER.debug(f"d - {d[0]}, val - {d[1]}")
+                        data[str(d[0])] = d[1]
+
+                tmp = {}
+                # record limit count 체크
+                if int(record_limit_count) != 0:
+                    _LOGGER.debug("data size : %d", len(data))
+                    for key in sorted(data.keys(), reverse=True):
+                        _LOGGER.debug("len : %d, limitCount : %d", len(tmp), int(record_limit_count))
+                        if len(tmp) <= int(record_limit_count) - 1:
+                            tmp[key] = data[key]
+                        else:
+                            break
+
+                    data = dict(sorted(tmp.items()))
+
+                if source_entity != None and record_period != None and offset_unit != None and offset != None and record_period_unit != None and record_limit_count != None and move_source_entity_device != None and parent_device_entity_id_format != None:
+                    #d = {'origin_entity': origin_entity,
+                    #        'name': name, 'record_period': record_period}
+                    #_LOGGER.debug(f"add entity - {d}")
+
+                    # options 에 설정이 있다면 덮어씌워줌
+                    for option in config_entry.options.get(CONF_ENTITIES):
+                        _LOGGER.debug("option : " + str(option))
+                        _LOGGER.debug("d is : " + str(d) +", option : " + str(option.get(CONF_NAME)))
+                        if eq(name, option.get(CONF_NAME)):
+                            source_entity = option.get(CONF_SOURCE_ENTITY)
+                            source_entity_attr = option.get(CONF_SOURCE_ENTITY_ATTR, None)
+                            if eq("None", source_entity_attr):
+                                source_entity_attr = None
+                            record_period_unit = option.get(CONF_RECORD_PERIOD_UNIT)
+                            record_period = option.get(CONF_RECORD_PERIOD)
+                            offset_unit = option.get(CONF_OFFSET_UNIT)
+                            offset = option.get(CONF_OFFSET)
+                            record_limit_count = int(option.get(CONF_RECORD_LIMIT_COUNT))
+                            move_source_entity_device = option.get(CONF_MOVE_SOURCE_ENTITY_DEVICE)
+                            parent_device_entity_id_format = option.get(CONF_PARENT_DEVICE_ENTITY_ID_FORMAT)
 
 
-                tmp_devices.append(
-                    (
-                        hass,
-                        config_entry.entry_id,
-                        device,
-                        name,
-                        source_entity,
-                        source_entity_attr,
-                        record_period_unit,
-                        record_period,
-                        offset_unit,
-                        offset,
-                        record_limit_count,
-                        move_source_entity_device,
-                        parent_device_entity_id_format,
-                        data,
-                        file,
-                        [d[0], d[1]],
-                        data_dir,
-                    ))
-                #data = sorted(data.items())
-                #f1.close()
-                with open(data_dir + file, "w") as fp2:
-                    fp2.write(FIELD_NAME)
-                    fp2.write(str(name) + "\n")
-                    fp2.write(FIELD_SOURCE_ENTITY)
-                    fp2.write(source_entity + "\n")
-                    fp2.write(FIELD_SOURCE_ENTITY_ATTR)
-                    fp2.write(str(source_entity_attr) + "\n")
-                    fp2.write(FIELD_RECORD_PERIOD_UNIT)
-                    fp2.write(record_period_unit + "\n")
-                    fp2.write(FIELD_RECORD_PERIOD)
-                    fp2.write(str(record_period) + "\n")
-                    fp2.write(FIELD_OFFSET_UNIT)
-                    fp2.write(offset_unit + "\n")
-                    fp2.write(FIELD_OFFSET)
-                    fp2.write(str(offset) + "\n")
-                    fp2.write(FIELD_RECORD_LIMIT_COUNT)
-                    fp2.write(str(record_limit_count) + "\n")
-                    fp2.write(FIELD_MOVE_SOURCE_ENTITY_DEVICE)
-                    fp2.write(str(move_source_entity_device) + "\n")
-                    fp2.write(FIELD_PARENT_DEVICE_ENTITY_ID_FORMAT)
-                    fp2.write(str(parent_device_entity_id_format) + "\n")
+                    tmp_devices.append(
+                        (
+                            hass,
+                            config_entry.entry_id,
+                            device,
+                            name,
+                            source_entity,
+                            source_entity_attr,
+                            record_period_unit,
+                            record_period,
+                            offset_unit,
+                            offset,
+                            record_limit_count,
+                            move_source_entity_device,
+                            parent_device_entity_id_format,
+                            data,
+                            file,
+                            [d[0], d[1]],
+                            data_dir,
+                        ))
+                    #data = sorted(data.items())
+                    #f1.close()
+                    with open(data_dir + file, "w") as fp2:
+                        fp2.write(FIELD_NAME)
+                        fp2.write(str(name) + "\n")
+                        fp2.write(FIELD_SOURCE_ENTITY)
+                        fp2.write(source_entity + "\n")
+                        fp2.write(FIELD_SOURCE_ENTITY_ATTR)
+                        fp2.write(str(source_entity_attr) + "\n")
+                        fp2.write(FIELD_RECORD_PERIOD_UNIT)
+                        fp2.write(record_period_unit + "\n")
+                        fp2.write(FIELD_RECORD_PERIOD)
+                        fp2.write(str(record_period) + "\n")
+                        fp2.write(FIELD_OFFSET_UNIT)
+                        fp2.write(offset_unit + "\n")
+                        fp2.write(FIELD_OFFSET)
+                        fp2.write(str(offset) + "\n")
+                        fp2.write(FIELD_RECORD_LIMIT_COUNT)
+                        fp2.write(str(record_limit_count) + "\n")
+                        fp2.write(FIELD_MOVE_SOURCE_ENTITY_DEVICE)
+                        fp2.write(str(move_source_entity_device) + "\n")
+                        fp2.write(FIELD_PARENT_DEVICE_ENTITY_ID_FORMAT)
+                        fp2.write(str(parent_device_entity_id_format) + "\n")
 
-                    for d in data.keys():
-                        fp2.write(FIELD_DATA)
-                        fp2.write(d + "," + str(data[d]) + "\n")
+                        for d in data.keys():
+                            fp2.write(FIELD_DATA)
+                            fp2.write(d + "," + str(data[d]) + "\n")
+
+    await hass.async_add_executor_job(_load_setting)
 
     for device in tmp_devices:
         new_devices.append(
@@ -502,8 +506,10 @@ class CustomRecorder(Sensorbase):
                 _LOGGER.debug(f"self._state - {self._state}")
                 d = "[data]\n" + str_now + ',' + str(self._state) + "\n"
                 #_LOGGER.debug(f"data - {data}")
-                with open(self._data_dir + self._attributes["data_file"], "a") as fp:
-                    fp.write(d)
+                def _save_file():
+                    with open(self._data_dir + self._attributes["data_file"], "a") as fp:
+                        fp.write(d)
+                self.hass.add_job(_save_file)
 
                 self._attributes["data"] = data
                 self.calc_statistics(data)

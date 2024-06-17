@@ -99,86 +99,90 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         data_dir = DATA_DIR + self.data[CONF_DEVICE_NAME] + "_" + config_entry.entry_id + "/"
         self.data[CONF_DATA_DIR] = data_dir
         self.data[CONF_ENTITIES] = []
+        self._bLoadSetting = False
 
         self._selected_option = {}
         self._selected_entity_id = None
-
-        _LOGGER.debug("data_dir : %s", data_dir)
-        if os.path.isdir(data_dir) == False:
-            os.makedirs(data_dir)
-
-        _LOGGER.debug("call init")
-        _LOGGER.debug(f"options - {config_entry.options}")
-        _LOGGER.debug("config entry_id : " + config_entry.entry_id)
-        # 디렉토리에 있는 목록으로 config 대체
-        file_list = os.listdir(data_dir)
-        #if len(file_list) <= 0:
-        #    os.removedirs(data_dir)
-
-        for file in file_list:
-            f = open(data_dir + file)
-            lines = f.readlines()
-            record_limit_count = DEFAULT_LIMIT_COUNT
-            move_source_entity_device = False
-            parent_device_entity_id_format = False
-            for idx, line in enumerate(lines):
-                #_LOGGER.debug(f"idx - {idx}, line = {line}")
-                isName = line.find(FIELD_NAME)
-                isSourceEntity = line.find(FIELD_SOURCE_ENTITY)
-                isSourceEntityAttr = line.find(FIELD_SOURCE_ENTITY_ATTR)
-                isRecordPeriodUnit = line.find(FIELD_RECORD_PERIOD_UNIT)
-                isRecordPeriod = line.find(FIELD_RECORD_PERIOD)
-                isOffsetUnit = line.find(FIELD_OFFSET_UNIT)
-                isOffset = line.find(FIELD_OFFSET)
-                isRecordLimitCount = line.find(FIELD_RECORD_LIMIT_COUNT)
-                isMoveSourceEntityDevice = line.find(FIELD_MOVE_SOURCE_ENTITY_DEVICE)
-                isParentEntityIdFormat = line.find(FIELD_PARENT_DEVICE_ENTITY_ID_FORMAT)
-                #_LOGGER.debug(f"isName - {isName}, isOriginEntity - {isOriginEntity}, isRecordPeriod - {isRecordPeriod}")
-
-                if isName == 0:
-                    name = lines[idx + 1].replace("\n", "")
-                if isSourceEntity == 0:
-                    source_entity = lines[idx + 1].replace("\n", "")
-                if isSourceEntityAttr == 0:
-                    source_entity_attr = lines[idx+1].replace("\n", "")
-                if isRecordPeriodUnit == 0:
-                    record_period_unit = lines[idx + 1].replace("\n", "")
-                if isRecordPeriod == 0:
-                    record_period = lines[idx + 1].replace("\n", "")
-                if isOffsetUnit == 0:
-                    offset_unit = lines[idx+1].replace("\n", "")
-                if isOffset == 0:
-                    offset = lines[idx+1].replace("\n", "")
-                if isRecordLimitCount == 0:
-                    record_limit_count = lines[idx+1].replace("\n", "")
-                if isMoveSourceEntityDevice == 0:
-                    move_source_entity_device = lines[idx+1].replace("\n", "")
-                if isParentEntityIdFormat == 0:
-                    parent_device_entity_id_format = lines[idx+1].replace("\n", "")
-
-            if source_entity != None and record_period != None and offset_unit != None and offset != None and record_period_unit != None and record_limit_count != None and\
-                move_source_entity_device != None:
-                d = {CONF_SOURCE_ENTITY: source_entity,
-                     CONF_SOURCE_ENTITY_ATTR: source_entity_attr,
-                     CONF_NAME: name, 
-                     CONF_RECORD_PERIOD_UNIT: record_period_unit,
-                     CONF_RECORD_PERIOD: record_period, 
-                     CONF_OFFSET_UNIT: offset_unit, 
-                     CONF_OFFSET: offset,
-                     CONF_RECORD_LIMIT_COUNT: record_limit_count,
-                     CONF_MOVE_SOURCE_ENTITY_DEVICE: move_source_entity_device,
-                     CONF_PARENT_DEVICE_ENTITY_ID_FORMAT: parent_device_entity_id_format
-                     }
-
-                self.data[CONF_ENTITIES].append(d)
-            f.close()
-
 
     async def async_step_init(
         self, user_input: Dict[str, Any] = None
     ) -> Dict[str, Any]:
         """Manage the options for the custom component."""
         errors: Dict[str, str] = {}
+
+        def _load_setting():
+            data_dir = self.data[CONF_DATA_DIR]
+
+            _LOGGER.debug("data_dir : %s", data_dir)
+            if os.path.isdir(data_dir) == False:
+                os.makedirs(data_dir)
+
+            _LOGGER.debug("call init")
+            # 디렉토리에 있는 목록으로 config 대체
+            file_list = os.listdir(data_dir)
+            #if len(file_list) <= 0:
+            #    os.removedirs(data_dir)
+
+            for file in file_list:
+                f = open(data_dir + file)
+                lines = f.readlines()
+                record_limit_count = DEFAULT_LIMIT_COUNT
+                move_source_entity_device = False
+                parent_device_entity_id_format = False
+                for idx, line in enumerate(lines):
+                    #_LOGGER.debug(f"idx - {idx}, line = {line}")
+                    isName = line.find(FIELD_NAME)
+                    isSourceEntity = line.find(FIELD_SOURCE_ENTITY)
+                    isSourceEntityAttr = line.find(FIELD_SOURCE_ENTITY_ATTR)
+                    isRecordPeriodUnit = line.find(FIELD_RECORD_PERIOD_UNIT)
+                    isRecordPeriod = line.find(FIELD_RECORD_PERIOD)
+                    isOffsetUnit = line.find(FIELD_OFFSET_UNIT)
+                    isOffset = line.find(FIELD_OFFSET)
+                    isRecordLimitCount = line.find(FIELD_RECORD_LIMIT_COUNT)
+                    isMoveSourceEntityDevice = line.find(FIELD_MOVE_SOURCE_ENTITY_DEVICE)
+                    isParentEntityIdFormat = line.find(FIELD_PARENT_DEVICE_ENTITY_ID_FORMAT)
+                    #_LOGGER.debug(f"isName - {isName}, isOriginEntity - {isOriginEntity}, isRecordPeriod - {isRecordPeriod}")
+
+                    if isName == 0:
+                        name = lines[idx + 1].replace("\n", "")
+                    if isSourceEntity == 0:
+                        source_entity = lines[idx + 1].replace("\n", "")
+                    if isSourceEntityAttr == 0:
+                        source_entity_attr = lines[idx+1].replace("\n", "")
+                    if isRecordPeriodUnit == 0:
+                        record_period_unit = lines[idx + 1].replace("\n", "")
+                    if isRecordPeriod == 0:
+                        record_period = lines[idx + 1].replace("\n", "")
+                    if isOffsetUnit == 0:
+                        offset_unit = lines[idx+1].replace("\n", "")
+                    if isOffset == 0:
+                        offset = lines[idx+1].replace("\n", "")
+                    if isRecordLimitCount == 0:
+                        record_limit_count = lines[idx+1].replace("\n", "")
+                    if isMoveSourceEntityDevice == 0:
+                        move_source_entity_device = lines[idx+1].replace("\n", "")
+                    if isParentEntityIdFormat == 0:
+                        parent_device_entity_id_format = lines[idx+1].replace("\n", "")
+
+                if source_entity != None and record_period != None and offset_unit != None and offset != None and record_period_unit != None and record_limit_count != None and\
+                    move_source_entity_device != None:
+                    d = {CONF_SOURCE_ENTITY: source_entity,
+                        CONF_SOURCE_ENTITY_ATTR: source_entity_attr,
+                        CONF_NAME: name, 
+                        CONF_RECORD_PERIOD_UNIT: record_period_unit,
+                        CONF_RECORD_PERIOD: record_period, 
+                        CONF_OFFSET_UNIT: offset_unit, 
+                        CONF_OFFSET: offset,
+                        CONF_RECORD_LIMIT_COUNT: record_limit_count,
+                        CONF_MOVE_SOURCE_ENTITY_DEVICE: move_source_entity_device,
+                        CONF_PARENT_DEVICE_ENTITY_ID_FORMAT: parent_device_entity_id_format
+                        }
+
+                    self.data[CONF_ENTITIES].append(d)
+                f.close()
+        if False == self._bLoadSetting:
+            await self.hass.async_add_executor_job(_load_setting)
+            self._bLoadSetting = True
 
         if user_input is not None:
 
