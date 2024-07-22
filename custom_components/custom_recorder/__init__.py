@@ -38,10 +38,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     entry.async_on_unload(entry.add_update_listener(update_listener))
     # This creates each HA object for each platform your device requires.
     # It's done by calling the `async_setup_entry` function in each platform module.
-    for component in PLATFORMS:
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, component)
-        )
+    # for component in PLATFORMSd:
+    #     hass.async_create_task(
+    #         hass.config_entries.async_forward_entry_setup(entry, component)
+    #     )
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True
 
@@ -81,11 +82,15 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     _LOGGER.debug("entry : " + str(entry.options))
     data_dir = entry.options.get(CONF_DATA_DIR)
-    if os.path.isdir(data_dir):
-        file_list = os.listdir(data_dir)
-        if len(file_list) <= 0:
-            _LOGGER.debug("remove dir : %s", data_dir)
-            os.removedirs(data_dir)
+
+    def check_dir():
+        if os.path.isdir(data_dir):
+            file_list = os.listdir(data_dir)
+            if len(file_list) <= 0:
+                _LOGGER.debug("remove dir : %s", data_dir)
+                os.removedirs(data_dir)
+
+    await hass.async_add_executor_job(check_dir)
 
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
