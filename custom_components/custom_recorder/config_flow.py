@@ -92,7 +92,6 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             """"""
 
     def __init__(self, config_entry):
-        self.config_entry = config_entry
         self.data = {}
         self.data[CONF_DEVICE_NAME] = config_entry.data.get(CONF_DEVICE_NAME)
         data_dir = DATA_DIR + self.data[CONF_DEVICE_NAME] + "_" + config_entry.entry_id + "/"
